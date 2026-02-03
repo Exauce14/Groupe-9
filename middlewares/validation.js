@@ -3,7 +3,7 @@ import {
     isAgeValide, isTelephoneValide, isNASValide, 
     isDateDeNaissanceValide, isAdresseDomicileValide } from '../public/js/validation.js';
 
-export const isProfilValide = (profil) => {
+const isProfilValide = (profil) => {
     const erreurs = [];
 
     if (!isNomValide(profil.nom)) {

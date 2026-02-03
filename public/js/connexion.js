@@ -12,7 +12,6 @@ btnDeconnexion.style.display = 'none';
 connexion = async (event) => {
     event.preventDefault();
 
-
     const data = {
         email: emailInput.value,
         password: passwordInput.value
