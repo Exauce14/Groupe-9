@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Banque Groupe 9 - Connexion</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="page-auth">
+    <div class="conteneur-auth">
+        <div class="en-tete-auth">
+            <div class="logo">
+                <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
+                    <rect width="50" height="50" rx="10" fill="#2563eb"/>
+                    <path d="M15 35V15H20V35H15Z" fill="white"/>
+                    <path d="M25 35V20H30V35H25Z" fill="white"/>
+                    <path d="M35 35V25H40V35H35Z" fill="white"/>
+                </svg>
+            </div>
+            <h1>Banque Groupe 9</h1>
+            <p class="sous-titre">Connectez-vous à votre compte</p>
+        </div>
+
+        <form id="formulaireConnexion" class="formulaire-auth">
+            <div id="messageAuth" class="message-cache"></div>
+
+            <div class="groupe-champ">
+                <label for="email">Adresse email</label>
+                <input type="email" id="email" name="email" placeholder="exemple@email.com" required autocomplete="email">
+                <span class="erreur-champ" id="erreurEmail"></span>
+            </div>
+
+            <div class="groupe-champ">
+                <label for="motDePasse">Mot de passe</label>
+                <div class="champ-avec-icone">
+                    <input type="password" id="motDePasse" name="motDePasse" placeholder="••••••••" required autocomplete="current-password">
+                    <button type="button" class="btn-icone" id="btnAfficherMdp" aria-label="Afficher le mot de passe">👁️</button>
+                </div>
+                <span class="erreur-champ" id="erreurMotDePasse"></span>
+            </div>
+
+            <div class="options-connexion">
+                <label class="checkbox-personnalise">
+                    <input type="checkbox" id="seSouvenir" name="seSouvenir">
+                    <span>Se souvenir de moi</span>
+                </label>
+                <a href="#" class="lien-secondaire">Mot de passe oublié ?</a>
+            </div>
+
+            <button type="submit" class="btn btn-primaire btn-large" id="btnConnexion">
+                <span class="texte-bouton">Se connecter</span>
+                <span class="spinner spinner-cache"></span>
+            </button>
+
+            <div class="lien-alternatif">
+                <p>Vous n'avez pas de compte ? <a href="inscription.html">S'inscrire</a></p>
+            </div>
+        </form>
+
+        <div class="pied-auth">
+            <p>&copy; 2026 Banque Groupe 9. Tous droits réservés.</p>
+        </div>
+    </div>
+
+    <script src="js/utilitaires.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initialiserPageConnexion();
+        });
+    </script>
+</body>
+</html>

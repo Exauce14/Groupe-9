@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vérification 2FA - Ma Banque</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="page-auth">
+    <div class="conteneur-auth">
+        <div class="en-tete-auth">
+            <div class="logo">
+                <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
+                    <rect width="50" height="50" rx="10" fill="#2563eb"/>
+                    <path d="M15 35V15H20V35H15Z" fill="white"/>
+                    <path d="M25 35V20H30V35H25Z" fill="white"/>
+                    <path d="M35 35V25H40V35H35Z" fill="white"/>
+                </svg>
+            </div>
+            <h1>Vérification en deux étapes</h1>
+            <p class="sous-titre">Entrez le code envoyé à <span id="emailMasque"></span></p>
+        </div>
+
+        <form id="formulaire2FA" class="formulaire-auth">
+            <div id="messageAuth" class="message-cache"></div>
+
+            <div class="groupe-champ">
+                <label for="code">Code de vérification (6 chiffres)</label>
+                <input 
+                    type="text" 
+                    id="code" 
+                    name="code" 
+                    placeholder="000000" 
+                    maxlength="6" 
+                    pattern="[0-9]{6}"
+                    required 
+                    autocomplete="one-time-code"
+                    autofocus
+                >
+                <span class="erreur-champ" id="erreurCode"></span>
+            </div>
+
+            <div class="info-timer">
+                ⏱️ Code valide pendant : <span id="timerExpiration">10:00</span>
+            </div>
+
+            <button type="submit" class="btn btn-primaire btn-large" id="btnVerifier">
+                <span class="texte-bouton">Vérifier</span>
+                <span class="spinner spinner-cache"></span>
+            </button>
+
+            <div class="lien-alternatif">
+                <button type="button" id="btnRenvoyer" class="btn-lien">
+                    Renvoyer le code
+                </button>
+            </div>
+        </form>
+
+        <div class="pied-auth">
+            <p>&copy; 2026 Ma Banque. Tous droits réservés.</p>
+        </div>
+    </div>
+
+    <script src="js/utilitaires.js"></script>
+    <script>
+        // Récupérer les données de la session (userId, email)
+        const sessionData = JSON.parse(sessionStorage.getItem('banque_2fa_pending') || '{}');
+        
+        if (!sessionData.userId || !sessionData.email) {
+            // Pas de session 2FA en attente → redirection connexion
+            window.location.href = 'index.html';
+        }
+
+        // Masquer l'email (ex: j***@example.com)
+        const masquerEmail = (email) => {
+            const [local, domain] = email.split('@');
+            if (local.length <= 2) return `${local[0]}***@${domain}`;
+            return `${local[0]}***${local[local.length-1]}@${domain}`;
+        };
+
+        document.getElementById('emailMasque').textContent = masquerEmail(sessionData.email);
+
+        // Timer d'expiration (10 minutes)
+        let tempsRestant = 600; // 10 minutes en secondes
+        const timerEl = document.getElementById('timerExpiration');
+        
+        const updateTimer = () => {
+            const min = Math.floor(tempsRestant / 60);
+            const sec = tempsRestant % 60;
+            timerEl.textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+            
+            if (tempsRestant <= 0) {
+                afficherErreur('Le code a expiré. Veuillez vous reconnecter.');
+                setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+            } else {
+                tempsRestant--;
+                setTimeout(updateTimer, 1000);
+            }
+        };
+        updateTimer();
+
+        // Auto-focus et auto-submit quand 6 chiffres
+        const champCode = document.getElementById('code');
+        champCode.addEventListener('input', (e) => {
+            // Garder seulement les chiffres
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            
+            // Auto-submit si 6 chiffres
+            if (e.target.value.length === 6) {
+                document.getElementById('formulaire2FA').requestSubmit();
+            }
+        });
+
+        // Soumission du formulaire
+        document.getElementById('formulaire2FA').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const code = champCode.value.trim();
+            if (code.length !== 6) {
+                afficherErreur('Le code doit contenir exactement 6 chiffres.');
+                return;
+            }
+
+            const btnVerifier = document.getElementById('btnVerifier');
+            afficherSpinner(btnVerifier);
+
+            try {
+                const { response, data } = await appelAPI('/auth/verifier-2fa', 'POST', {
+                    userId: sessionData.userId,
+                    code
+                });
+
+                if (response.ok && data.succes) {
+                    // Sauvegarder le token
+                    sauvegarderToken(data.token);
+                    // Nettoyer la session 2FA
+                    sessionStorage.removeItem('banque_2fa_pending');
+                    
+                    afficherSucces('Vérification réussie ! Redirection...');
+                    setTimeout(() => { window.location.href = 'tableau-bord.html'; }, 1000);
+                } else {
+                    afficherErreur(data.message || 'Code invalide');
+                    masquerSpinner(btnVerifier);
+                    champCode.value = '';
+                    champCode.focus();
+                }
+            } catch (erreur) {
+                console.error('Erreur vérification:', erreur);
+                afficherErreur('Erreur réseau. Vérifiez votre connexion.');
+                masquerSpinner(btnVerifier);
+            }
+        });
+
+        // Renvoyer le code
+        document.getElementById('btnRenvoyer').addEventListener('click', async () => {
+            try {
+                const { response, data } = await appelAPI('/auth/renvoyer-code', 'POST', {
+                    userId: sessionData.userId
+                });
+
+                if (response.ok && data.succes) {
+                    afficherSucces('Un nouveau code a été envoyé !');
+                    // Réinitialiser le timer
+                    tempsRestant = 600;
+                    champCode.value = '';
+                    champCode.focus();
+                } else {
+                    afficherErreur(data.message || 'Erreur lors du renvoi');
+                }
+            } catch (erreur) {
+                afficherErreur('Erreur réseau.');
+            }
+        });
+    </script>
+</body>
+</html>
