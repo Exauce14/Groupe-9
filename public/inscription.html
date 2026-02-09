@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ma Banque - Inscription</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="page-auth">
+    <div class="conteneur-auth">
+        <div class="en-tete-auth">
+            <div class="logo">
+                <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
+                    <rect width="50" height="50" rx="10" fill="#2563eb"/>
+                    <path d="M15 35V15H20V35H15Z" fill="white"/>
+                    <path d="M25 35V20H30V35H25Z" fill="white"/>
+                    <path d="M35 35V25H40V35H35Z" fill="white"/>
+                </svg>
+            </div>
+            <h1>Créer un compte</h1>
+            <p class="sous-titre">Rejoignez la Banque du groupe 9</p>
+        </div>
+
+        <form id="formulaireInscription" class="formulaire-auth">
+            <div id="messageAuth" class="message-cache"></div>
+
+            <div class="groupe-champs-ligne">
+                <div class="groupe-champ">
+                    <label for="prenom">Prénom *</label>
+                    <input type="text" id="prenom" name="prenom" placeholder="Jean" required>
+                </div>
+                <div class="groupe-champ">
+                    <label for="nom">Nom *</label>
+                    <input type="text" id="nom" name="nom" placeholder="Dupont" required>
+                </div>
+            </div>
+
+            <div class="groupe-champ">
+                <label for="email">Adresse email *</label>
+                <input type="email" id="email" name="email" placeholder="exemple@email.com" required>
+            </div>
+
+            <div class="groupe-champ">
+                <label for="telephone">Téléphone</label>
+                <input type="tel" id="telephone" name="telephone" placeholder="514-555-0101">
+                <span class="aide-champ">Format: 514-555-0101</span>
+            </div>
+
+            <div class="groupe-champ">
+                <label for="adresse">Adresse complète</label>
+                <textarea id="adresse" name="adresse" placeholder="123 Rue Principale, Montréal, QC H2X 1Y5" rows="2"></textarea>
+            </div>
+
+            <div class="groupe-champ">
+                <label for="motDePasse">Mot de passe *</label>
+                <div class="champ-avec-icone">
+                    <input type="password" id="motDePasse" name="motDePasse" placeholder="••••••••" required>
+                    <button type="button" class="btn-icone" id="btnAfficherMdp" aria-label="Afficher le mot de passe">👁️</button>
+                </div>
+
+                <div class="indicateur-mdp">
+                    <div class="barre-mdp">
+                        <div class="progression-mdp" id="progressionMdp"></div>
+                    </div>
+                    <span class="texte-force-mdp" id="texteForceMdp">Entrez un mot de passe</span>
+                </div>
+
+                <ul class="criteres-mdp">
+                    <li id="critere-longueur"><span class="icone-critere">○</span> Au moins 8 caractères</li>
+                    <li id="critere-majuscule"><span class="icone-critere">○</span> Une lettre majuscule</li>
+                    <li id="critere-minuscule"><span class="icone-critere">○</span> Une lettre minuscule</li>
+                    <li id="critere-chiffre"><span class="icone-critere">○</span> Un chiffre</li>
+                </ul>
+            </div>
+
+            <div class="groupe-champ">
+                <label for="confirmationMotDePasse">Confirmer le mot de passe *</label>
+                <input type="password" id="confirmationMotDePasse" name="confirmationMotDePasse" placeholder="••••••••" required>
+            </div>
+
+            <div class="groupe-champ">
+                <label class="checkbox-personnalise">
+                    <input type="checkbox" id="accepterConditions" name="accepterConditions" required>
+                    <span>J'accepte les <a href="#" class="lien-inline">conditions d'utilisation</a> et la <a href="#" class="lien-inline">politique de confidentialité</a></span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primaire btn-large" id="btnInscription">
+                <span class="texte-bouton">Créer mon compte</span>
+                <span class="spinner spinner-cache"></span>
+            </button>
+
+            <div class="lien-alternatif">
+                <p>Vous avez déjà un compte ? <a href="index.html">Se connecter</a></p>
+            </div>
+        </form>
+
+        <div class="pied-auth">
+            <p>&copy; 2026 Banque Groupe 9. Tous droits réservés.</p>
+        </div>
+    </div>
+
+    <script src="js/utilitaires.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initialiserPageInscription();
+        });
+    </script>
+</body>
+</html>

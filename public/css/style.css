@@ -1,0 +1,355 @@
+/* ============================================
+   STYLE.CSS — SPRINT 1
+   Application bancaire complète
+   ============================================ */
+
+/* ── RESET & BASE ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bleu-primaire:    #2563eb;
+    --bleu-sombre:      #1d4ed8;
+    --bleu-clair:       #dbeafe;
+    --vert:             #16a34a;
+    --vert-clair:       #dcfce7;
+    --rouge:            #dc2626;
+    --rouge-clair:      #fecaca;
+    --jaune:            #ca8a04;
+    --jaune-clair:      #fef08a;
+    --orange:           #ea580c;
+    --orange-clair:     #fed7aa;
+    --violet:           #7c3aed;
+    --violet-clair:     #ede9fe;
+    --gris-100:         #f3f4f6;
+    --gris-200:         #e5e7eb;
+    --gris-300:         #d1d5db;
+    --gris-500:         #6b7280;
+    --gris-700:         #374151;
+    --gris-900:         #111827;
+    --blanc:            #ffffff;
+    --ombre:            0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    --ombre-md:         0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+    --ombre-lg:         0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+    --rayon:            8px;
+    --rayon-lg:         12px;
+    --rayon-xl:         16px;
+    --transition:       0.2s ease;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--gris-900);
+    background: var(--gris-100);
+    min-height: 100vh;
+}
+
+a { color: var(--bleu-primaire); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+textarea { resize: vertical; font-family: inherit; }
+
+/* ── PAGES AUTH (login / inscription) ── */
+.page-auth {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+}
+
+.conteneur-auth {
+    background: var(--blanc);
+    border-radius: var(--rayon-xl);
+    box-shadow: var(--ombre-lg);
+    width: 100%;
+    max-width: 440px;
+    padding: 40px 36px 30px;
+}
+
+.en-tete-auth { text-align: center; margin-bottom: 28px; }
+.en-tete-auth .logo { margin-bottom: 12px; }
+.en-tete-auth h1 { font-size: 1.75rem; color: var(--gris-900); margin-bottom: 4px; }
+.sous-titre { color: var(--gris-500); font-size: 0.9rem; }
+
+/* ── FORMULAIRES ── */
+.formulaire-auth { display: flex; flex-direction: column; gap: 18px; }
+
+.groupe-champ { display: flex; flex-direction: column; gap: 5px; }
+.groupe-champ label { font-size: 0.875rem; font-weight: 600; color: var(--gris-700); }
+
+.groupe-champ input,
+.groupe-champ textarea,
+.groupe-champ select {
+    padding: 10px 12px;
+    border: 2px solid var(--gris-200);
+    border-radius: var(--rayon);
+    font-size: 0.95rem;
+    transition: border-color var(--transition);
+    background: var(--blanc);
+}
+.groupe-champ input:focus,
+.groupe-champ textarea:focus { outline: none; border-color: var(--bleu-primaire); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+
+.champ-avec-icone { position: relative; }
+.champ-avec-icone input { width: 100%; padding-right: 42px; }
+.btn-icone {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; font-size: 1.1rem; color: var(--gris-500);
+    padding: 4px; border-radius: var(--rayon);
+}
+.btn-icone:hover { background: var(--gris-100); }
+
+.aide-champ { font-size: 0.78rem; color: var(--gris-500); }
+.erreur-champ { font-size: 0.78rem; color: var(--rouge); min-height: 1.1rem; }
+
+.groupe-champs-ligne { display: flex; gap: 14px; }
+.groupe-champs-ligne .groupe-champ { flex: 1; }
+
+/* ── OPTIONS CONNEXION ── */
+.options-connexion {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.85rem;
+}
+.lien-secondaire { color: var(--gris-500); font-size: 0.82rem; }
+.lien-secondaire:hover { color: var(--bleu-primaire); }
+
+/* ── CHECKBOX ── */
+.checkbox-personnalise { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; font-size: 0.85rem; }
+.checkbox-personnalise input[type="checkbox"] { margin-top: 2px; accent-color: var(--bleu-primaire); width: 16px; height: 16px; flex-shrink: 0; }
+.lien-inline { font-size: inherit; }
+
+/* ── BOUTONS ── */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 20px;
+    border-radius: var(--rayon);
+    border: none;
+    font-size: 0.92rem; font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition), transform 0.1s;
+    position: relative;
+    white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-primaire { background: var(--bleu-primaire); color: var(--blanc); }
+.btn-primaire:hover:not(:disabled) { background: var(--bleu-sombre); }
+
+.btn-secondaire { background: var(--gris-200); color: var(--gris-700); }
+.btn-secondaire:hover:not(:disabled) { background: var(--gris-300); }
+
+.btn-large { padding: 12px 24px; font-size: 1rem; width: 100%; }
+.btn-petite { padding: 7px 14px; font-size: 0.82rem; }
+
+/* Spinner dans les boutons */
+.spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: var(--blanc);
+    border-radius: 50%;
+    animation: tourner 0.6s linear infinite;
+}
+.spinner-cache { display: none; }
+@keyframes tourner { to { transform: rotate(360deg); } }
+
+/* ── MESSAGES ── */
+.message-cache { display: none; }
+.message {
+    display: block;
+    padding: 10px 14px;
+    border-radius: var(--rayon);
+    font-size: 0.88rem;
+    margin-bottom: 4px;
+}
+.message-succes       { background: var(--vert-clair);   color: #166534; border: 1px solid #86efac; }
+.message-erreur       { background: var(--rouge-clair);  color: #991b1b; border: 1px solid #fca5a5; }
+.message-avertissement{ background: var(--jaune-clair);  color: #854d0e; border: 1px solid #facc15; }
+.message-info         { background: var(--bleu-clair);   color: #1e40af; border: 1px solid #93c5fd; }
+
+/* ── INDICATEUR MOT DE PASSE ── */
+.indicateur-mdp { margin-top: 6px; }
+.barre-mdp { height: 4px; background: var(--gris-200); border-radius: 2px; overflow: hidden; }
+.progression-mdp { height: 100%; width: 0; border-radius: 2px; transition: width 0.3s, background 0.3s; background: var(--gris-300); }
+.force-faible  { background: var(--rouge) !important; }
+.force-moyen   { background: var(--jaune) !important; }
+.force-fort    { background: var(--vert) !important; }
+
+.texte-force-mdp { font-size: 0.78rem; color: var(--gris-500); margin-top: 3px; display: block; }
+.texte-force-mdp.force-faible  { color: var(--rouge); }
+.texte-force-mdp.force-moyen   { color: var(--jaune); }
+.texte-force-mdp.force-fort    { color: var(--vert); }
+
+.criteres-mdp { list-style: none; margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; }
+.criteres-mdp li { font-size: 0.78rem; color: var(--gris-500); }
+.criteres-mdp .icone-critere { margin-right: 4px; }
+.criteres-mdp .critere-satisfait { color: var(--vert); font-weight: 600; }
+.criteres-mdp .critere-satisfait .icone-critere { color: var(--vert); }
+
+/* ── LIEN ALTERNATIF (bas du formulaire) ── */
+.lien-alternatif { text-align: center; font-size: 0.85rem; color: var(--gris-500); margin-top: 6px; }
+
+/* ── PIED AUTH ── */
+.pied-auth { text-align: center; margin-top: 20px; font-size: 0.78rem; color: var(--gris-500); }
+
+/* ============================================
+   TABLEAU DE BORD
+   ============================================ */
+
+.page-tableau-bord { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ── EN-TÊTE ── */
+.en-tete {
+    background: var(--blanc);
+    box-shadow: var(--ombre);
+    position: sticky; top: 0; z-index: 100;
+}
+.conteneur-en-tete {
+    max-width: 1200px; margin: 0 auto;
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+}
+.logo-en-tete { display: flex; align-items: center; gap: 10px; }
+.nom-appli { font-size: 1.2rem; font-weight: 700; color: var(--gris-900); }
+
+.navigation { display: flex; align-items: center; gap: 16px; }
+.info-utilisateur { display: flex; align-items: center; gap: 10px; }
+.avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--bleu-primaire), var(--violet));
+    display: flex; align-items: center; justify-content: center;
+    color: var(--blanc); font-weight: 700; font-size: 0.9rem;
+}
+.texte-utilisateur { display: flex; flex-direction: column; }
+.nom-utilisateur { font-size: 0.88rem; font-weight: 600; color: var(--gris-900); }
+.role-utilisateur { font-size: 0.75rem; color: var(--gris-500); }
+
+/* ── CONTENU PRINCIPAL ── */
+.contenu-principal { flex: 1; padding: 28px 20px; }
+.conteneur { max-width: 1200px; margin: 0 auto; }
+
+/* ── BIENVENUE ── */
+.section-bienvenue { margin-bottom: 22px; }
+.section-bienvenue h1 { font-size: 1.6rem; color: var(--gris-900); }
+.section-bienvenue .sous-titre { color: var(--gris-500); font-size: 0.92rem; margin-top: 2px; }
+
+/* ── TOTAUX ── */
+.grille-totaux { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+
+.carte-total {
+    background: var(--blanc);
+    border-radius: var(--rayon-lg);
+    padding: 18px 20px;
+    box-shadow: var(--ombre);
+    display: flex; align-items: center; gap: 14px;
+    border-left: 4px solid transparent;
+}
+.carte-total-depenses       { border-left-color: var(--bleu-primaire); }
+.carte-total-epargne        { border-left-color: var(--vert); }
+.carte-total-credit         { border-left-color: var(--rouge); }
+.carte-total-investissement { border-left-color: var(--violet); }
+
+.icone-total { font-size: 1.5rem; }
+.contenu-total { display: flex; flex-direction: column; }
+.etiquette-total { font-size: 0.78rem; color: var(--gris-500); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.valeur-total { font-size: 1.25rem; font-weight: 700; color: var(--gris-900); margin-top: 2px; }
+
+/* ── GRILLE PRINCIPALE ── */
+.grille-principale { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+@media (max-width: 768px) { .grille-principale { grid-template-columns: 1fr; } }
+
+/* ── SECTIONS (comptes / transactions) ── */
+.section-comptes,
+.section-transactions {
+    background: var(--blanc);
+    border-radius: var(--rayon-lg);
+    box-shadow: var(--ombre);
+    padding: 20px;
+}
+
+.en-tete-section { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.en-tete-section h2 { font-size: 1.05rem; color: var(--gris-900); }
+
+/* ── CARTES COMPTES ── */
+.liste-comptes { display: flex; flex-direction: column; gap: 12px; }
+
+.carte-compte {
+    border: 2px solid var(--gris-200);
+    border-radius: var(--rayon-lg);
+    padding: 16px;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+.carte-compte:hover { border-color: var(--bleu-primaire); box-shadow: var(--ombre-md); }
+
+.carte-compte.compte-checking    { border-top: 3px solid var(--bleu-primaire); }
+.carte-compte.compte-savings     { border-top: 3px solid var(--vert); }
+.carte-compte.compte-credit      { border-top: 3px solid var(--rouge); }
+.carte-compte.compte-investment  { border-top: 3px solid var(--violet); }
+
+.en-tete-carte-compte { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.type-compte { font-size: 0.82rem; font-weight: 700; color: var(--gris-700); text-transform: uppercase; letter-spacing: 0.5px; }
+
+.statut-compte { font-size: 0.72rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+.statut-compte.actif { background: var(--vert-clair); color: #166534; }
+.statut-compte.ferme { background: var(--rouge-clair); color: #991b1b; }
+
+.numero-compte { font-size: 0.88rem; color: var(--gris-500); font-family: monospace; margin-bottom: 6px; }
+.solde-compte { font-size: 1.3rem; font-weight: 700; color: var(--gris-900); }
+.pied-carte-compte { margin-top: 10px; }
+.date-compte { font-size: 0.75rem; color: var(--gris-500); }
+
+/* ── TRANSACTIONS ── */
+.liste-transactions { display: flex; flex-direction: column; }
+
+.ligne-transaction {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gris-200);
+}
+.ligne-transaction:last-child { border-bottom: none; }
+
+.icone-transaction { font-size: 1.3rem; width: 36px; text-align: center; }
+.info-transaction { flex: 1; display: flex; flex-direction: column; }
+.description-transaction { font-size: 0.88rem; font-weight: 600; color: var(--gris-900); }
+.date-transaction { font-size: 0.76rem; color: var(--gris-500); margin-top: 1px; }
+
+.montant-transaction { font-size: 0.92rem; font-weight: 700; white-space: nowrap; }
+.montant-positif { color: var(--vert); }
+.montant-negatif { color: var(--rouge); }
+
+/* ── ÉTATS ── */
+.etat-chargement { color: var(--gris-500); font-size: 0.88rem; text-align: center; padding: 20px; }
+.texte-gris { color: var(--gris-500); font-size: 0.88rem; }
+
+/* ── MODAL SESSION ── */
+.modal-superposition {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+}
+.modal-cache { display: none !important; }
+
+.modal {
+    background: var(--blanc);
+    border-radius: var(--rayon-xl);
+    box-shadow: var(--ombre-lg);
+    width: 90%; max-width: 420px;
+    overflow: hidden;
+}
+.en-tete-modal { padding: 20px 24px 0; }
+.en-tete-modal h3 { font-size: 1.1rem; color: var(--gris-900); }
+.corps-modal { padding: 16px 24px; color: var(--gris-700); font-size: 0.92rem; }
+.corps-modal p + p { margin-top: 8px; }
+.pied-modal { padding: 16px 24px 20px; display: flex; justify-content: flex-end; gap: 10px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 480px) {
+    .conteneur-auth { padding: 30px 20px 24px; }
+    .grille-totaux { grid-template-columns: 1fr 1fr; }
+    .conteneur-en-tete { padding: 10px 14px; }
+    .info-utilisateur .texte-utilisateur { display: none; }
+}
