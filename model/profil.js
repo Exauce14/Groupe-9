@@ -38,12 +38,12 @@ export const createProfil = async (dataProfil) => {
         [
             dataProfil.nom,
             dataProfil.prenom,
-            dataProfil.date_de_naissance,
+            dataProfil.date_naissance,
             dataProfil.age,
             dataProfil.sexe,
             dataProfil.nationalite,
             dataProfil.nas,
-            dataProfil.adresse_domicile,
+            dataProfil.adresse,
             dataProfil.telephone,
             dataProfil.email,
             hash
@@ -69,15 +69,58 @@ export const getProfilById = async (id) => {
 }
 //Recuperer un profil par son email
 export const getProfilByEmail = async (email) => {
+    const result = await pool.query(
+        `SELECT id, email, password, statut, tentatives
+         FROM utilisateurs
+         WHERE email = $1`,
+        [email]
+    );
+
+    return result.rows[0] || null;
+};
+//Incrémenter le nombre de tentatives de connexion
+export const incrementerTentatives = async (email) => {
+    await pool.query(
+        `UPDATE utilisateurs
+         SET tentatives = tentatives + 1,
+             derniere_tentative = NOW()
+         WHERE email = $1`,
+        [email]
+    );
+};
+//bloquer un compte après trop de tentatives    
+export const bloquerCompte = async (email) => {
+    await pool.query(
+        `UPDATE utilisateurs
+         SET statut = 'bloquer'
+         WHERE email = $1`,
+        [email]
+    );
+};
+//Réinitialiser le nombre de tentatives après une connexion réussie
+export const resetTentatives = async (email) => {
+    await pool.query(
+        `UPDATE utilisateurs
+         SET tentatives = 0
+         WHERE email = $1`,
+        [email]
+    );
+};
+
+
+
+//Recuperer un profil par son statut
+export const getProfilByStatut = async (statut) => {
     const profilResult = await pool.query(
         `SELECT 
         id, nom, prenom, date_naissance, age, 
         sexe, nationalite, nas, adresse, telephone, 
-        email, password FROM utilisateurs WHERE email = $1`, [email]);
+        email FROM utilisateurs WHERE statut = $1`, [statut]);
 
-    return profilResult.rows[0]
+    return profilResult.rows
 
 }
+
 
 //Modifier un profil
 export const updateProfil = async (id, dataProfil) => {

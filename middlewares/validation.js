@@ -1,7 +1,6 @@
 import { 
     isNomValide, isMailValide, isPasswordValide, 
-    isAgeValide, isTelephoneValide, isNASValide, 
-    isDateDeNaissanceValide, isAdresseDomicileValide } from '../public/js/validation.js';
+    isAgeValide, isTelephoneValide, isNASValide, isDateDeNaissanceValide} from '../public/js/validation.js';
 
 export const isProfilValide = (profil) => {
     const erreurs = [];
@@ -24,7 +23,7 @@ export const isProfilValide = (profil) => {
         );
     }
 
-    if (!isDateDeNaissanceValide(profil.date_de_naissance)) {
+    if (!isDateDeNaissanceValide(profil.date_naissance)) {
         erreurs.push("Date de naissance invalide (18 ans minimum)");
     }
 
@@ -40,9 +39,9 @@ export const isProfilValide = (profil) => {
         erreurs.push("NAS invalide");
     }
 
-    if (!isAdresseDomicileValide(profil.adresse_domicile)) {
-        erreurs.push("Adresse domiciliaire invalide");
-    }
+    // if (!isAdresseDomicileValide(profil.adresse_domicile)) {
+    //     erreurs.push("Adresse domiciliaire invalide");
+    // }
 
     return {
         valide: erreurs.length === 0,
@@ -51,17 +50,17 @@ export const isProfilValide = (profil) => {
 };
 
 export const profilValide = (request, response, next) => {
-    const { nom, prenom, date_de_naissance, age, sexe, nationalite, nas, adresse_domicile, telephone, email, password } = request.body;
+    const { nom, prenom, date_naissance, age, sexe, nationalite, nas, adresse, telephone, email, password } = request.body;
 
     const profil = {
         nom,
         prenom,
-        date_de_naissance,
+        date_naissance,
         age,
         sexe,
         nationalite,
         nas,
-        adresse_domicile,
+        adresse,
         telephone,
         email,
         password

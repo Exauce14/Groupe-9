@@ -53,6 +53,6 @@ export const isDateDeNaissanceValide = (dateString) => {
 
     return realAge >= 18 && realAge <= 120;
 };
-export const isAdresseDomicileValide = (adresse) => {
-    return typeof adresse === 'string' && adresse.trim().length > 0;
-}   
+// export const isAdresseDomicileValide = (adresse) => {
+//     return typeof adresse === 'string' && adresse.trim().length > 0;
+// }   

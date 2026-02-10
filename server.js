@@ -7,9 +7,12 @@ import session from 'express-session'
 import memorystore from 'memorystore'
 import passport from 'passport'
 import './auth.js';
+// import { pool } from '../db/db.js';
 
 // Iportation des fonctions
-import { createProfil, getAllProfils, getProfilById, updateProfil, deleteProfil} from './model/profil.js'
+import { createProfil, getAllProfils, getProfilById, getProfilByStatut, 
+    updateProfil, deleteProfil, getProfilByEmail, resetTentatives, 
+    bloquerCompte, incrementerTentatives} from './model/profil.js'
 import { profilValide } from './middlewares/validation.js'
 
 // Création du serveur
@@ -50,10 +53,20 @@ app.get('/api/profils/:id', async ( request, response) => {
         response.status(404).json({ message: "Profil non trouvé" })
     }
 })
-app.post('/api/profils', profilValide, async (request, response) => {
-    const { nom, prenom, date_de_naissance, age, sexe, nationalite, nas, adresse_domicile, telephone, email, password } = request.body
+app.get('/api/profilsStatut/:statut', async (request, response) => {
+    const requesteStatut = request.params.statut
+    const profil = await getProfilByStatut(requesteStatut)
 
-    await createProfil({ nom, prenom, date_de_naissance, age, sexe, nationalite, nas, adresse_domicile, telephone, email, password })
+    if (profil) {
+        response.status(200).json(profil)
+    } else {
+        response.status(404).json({ message: "Profil non trouvé" })
+    }
+})
+app.post('/api/profils', profilValide, async (request, response) => {
+    const { nom, prenom, date_naissance, age, sexe, nationalite, nas, adresse, telephone, email, password } = request.body
+
+    await createProfil({ nom, prenom, date_naissance, age, sexe, nationalite, nas, adresse, telephone, email, password })
     response.status(201).json( { message: "Profil créé avec succès" })
 })
 app.patch('/api/profils/:id', async (request, response) => {
@@ -77,31 +90,70 @@ app.delete('/api/profils/:id', async (request, response) => {
 })
 
 //Route pour la connexion
-app.post('/api/connexion', (request, response, next) => {
-    passport.authenticate('local', (error, user, info) => {
+app.post('/api/connexion', async (request, response, next) => {
+    const { email } = request.body;
 
-        if (error) {
-            return next(error);
-        }
+    try {
+        const user = await getProfilByEmail(email);
 
+        // Email inexistant
         if (!user) {
             return response.status(401).json({
                 message: 'Email ou mot de passe incorrect'
             });
         }
 
-        request.logIn(user, (error) => {
-            if (error) {
-                return next(error);
+        // Déjà bloqué
+        if (user.statut === 'bloquer') {
+            return response.status(403).json({
+                message: 'Votre compte est bloqué. Veuillez contacter le support.'
+            });
+        }
+
+        passport.authenticate('local', async (error, userAuth) => {
+
+            if (error) return next(error);
+
+            //Mot de passe incorrect
+            if (!userAuth) {
+
+                await incrementerTentatives(email);
+
+                const tentatives = user.tentatives + 1;
+
+                if (tentatives >= 3) {
+                    await bloquerCompte(email);
+
+                    return response.status(403).json({
+                        message: 'Compte bloqué après 3 tentatives incorrectes.'
+                    });
+                }
+
+                return response.status(401).json({
+                    message: `Email ou mot de passe incorrect (${tentatives}/3)`
+                });
             }
 
-            response.status(200).json({
-                message: 'Connexion réussie'
-            });
-        });
+            //Connexion réussie
+            await resetTentatives(email);
 
-    })(request, response, next);
+            request.logIn(userAuth, (error) => {
+                if (error) return next(error);
+
+                return response.status(200).json({
+                    message: 'Connexion réussie'
+                });
+            });
+
+        })(request, response, next);
+
+    } catch (err) {
+        console.error(err);
+        response.status(500).json({ message: 'Erreur serveur' });
+    }
 });
+
+
 
 // deconnexion
 app.post('/api/deconnexion', (request, response, next) => {

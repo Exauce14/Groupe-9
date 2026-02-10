@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     email VARCHAR(255) UNIQUE NOT NULL,
     password TEXT NOT NULL,
     statut VARCHAR(20) DEFAULT 'actif',
+    tentatives INTEGER DEFAULT 0,
+    derniere_tentative TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
