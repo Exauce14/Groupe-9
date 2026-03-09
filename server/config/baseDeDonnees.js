@@ -1,57 +1,31 @@
 const { Pool } = require('pg');
-require('dotenv').config();
 
+// Configuration de la connexion PostgreSQL
 const pool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || 'banque_db',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+  user: process.env.DB_USER || 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  database: process.env.DB_NAME || 'base_de_donne_projet_integrateur',
+  password: process.env.DB_PASSWORD || 'exauce2005',
+  port: process.env.DB_PORT || 5432,
 });
 
-pool.on('error', (err) => {
-    console.error('❌ Erreur inattendue sur client inactif', err);
-    process.exit(-1);
-});
+// Fonction pour exécuter des requêtes
+const query = (text, params) => pool.query(text, params);
 
-pool.connect((err, client, release) => {
-    if (err) {
-        console.error('❌ Erreur connexion BD:', err.message);
-    } else {
-        console.log('✅ Connecté à PostgreSQL');
-        release();
-    }
-});
-
-const query = async (text, params) => {
-    const start = Date.now();
-    try {
-        const res = await pool.query(text, params);
-        console.log('✓ Requête', { duration: Date.now() - start + 'ms', rows: res.rowCount });
-        return res;
-    } catch (error) {
-        console.error('❌ Erreur requête:', error.message);
-        throw error;
-    }
-};
-
-const getClient = async () => {
+// Fonction pour tester la connexion
+const connectDB = async () => {
+  try {
     const client = await pool.connect();
-    const origQuery = client.query;
-    const origRelease = client.release;
-    const timeout = setTimeout(() => {
-        console.error('⚠️ Client timeout');
-    }, 5000);
-    client.release = () => {
-        clearTimeout(timeout);
-        client.query = origQuery;
-        client.release = origRelease;
-        return origRelease.apply(client);
-    };
-    return client;
+    console.log('✅ Connecté à PostgreSQL');
+    
+    const result = await client.query('SELECT current_database()');
+    console.log('📊 Base de données:', result.rows[0].current_database);
+    
+    client.release();
+  } catch (error) {
+    console.error('❌ Erreur connexion PostgreSQL:', error.message);
+    process.exit(1);
+  }
 };
 
-module.exports = { pool, query, getClient };
+module.exports = { pool, query, connectDB };

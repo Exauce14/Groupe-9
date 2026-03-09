@@ -1,0 +1,463 @@
+const API_URL = 'http://localhost:3000/api';
+let token = localStorage.getItem('token');
+let utilisateurInfo = null;
+let demandesExistantes = [];
+let comptesExistants = [];
+let cartesExistantes = [];
+
+// Vérifier l'authentification
+if (!token) {
+    window.location.href = 'index.html';
+}
+
+// Décoder le token
+try {
+    utilisateurInfo = JSON.parse(atob(token.split('.')[1]));
+} catch (error) {
+    console.error('Erreur décodage token:', error);
+    window.location.href = 'index.html';
+}
+
+// Charger les données au démarrage
+async function initialiser() {
+    await Promise.all([
+        chargerDemandes(),
+        chargerComptesExistants(),
+        chargerCartesExistantes()
+    ]);
+    verifierDisponibilitesDemandes();
+}
+
+// Charger les comptes existants
+async function chargerComptesExistants() {
+    try {
+        const response = await fetch(`${API_URL}/comptes/mes-comptes`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (data.succes) {
+            comptesExistants = data.comptes;
+        }
+    } catch (error) {
+        console.error('Erreur chargement comptes:', error);
+    }
+}
+
+// Charger les cartes existantes
+async function chargerCartesExistantes() {
+    try {
+        const response = await fetch(`${API_URL}/cartes/mes-cartes`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (data.succes) {
+            cartesExistantes = data.cartes;
+        }
+    } catch (error) {
+        console.error('Erreur chargement cartes:', error);
+    }
+}
+
+// Vérifier quelles demandes sont disponibles
+function verifierDisponibilitesDemandes() {
+    // Compte Épargne : 1 seul autorisé
+    const aCompteEpargne = comptesExistants.some(c => c.type_compte === 'savings');
+    const aDemandeEpargneEnCours = demandesExistantes.some(d => 
+        d.type_demande === 'account_opening' && 
+        d.type_compte === 'savings' && 
+        d.statut === 'pending'
+    );
+    
+    if (aCompteEpargne || aDemandeEpargneEnCours) {
+        desactiverCarte('epargne', aCompteEpargne ? 'Vous avez déjà un compte épargne' : 'Demande en cours d\'examen');
+    }
+
+    // Compte Placement (Investment) : 1 seul autorisé
+    const aComptePlacement = comptesExistants.some(c => c.type_compte === 'investment');
+    const aDemandePlacementEnCours = demandesExistantes.some(d => 
+        d.type_demande === 'investment' && 
+        d.statut === 'pending'
+    );
+    
+    if (aComptePlacement || aDemandePlacementEnCours) {
+        desactiverCarte('placement', aComptePlacement ? 'Vous avez déjà un compte de placement' : 'Demande en cours d\'examen');
+    }
+
+    // Carte de Crédit : 1 seule autorisée
+    const aCartCredit = cartesExistantes.some(c => c.type_carte === 'credit');
+    const aDemandeCreditEnCours = demandesExistantes.some(d => 
+        d.type_demande === 'credit_card' && 
+        d.statut === 'pending'
+    );
+    
+    if (aCartCredit || aDemandeCreditEnCours) {
+        desactiverCarte('credit', aCartCredit ? 'Vous avez déjà une carte de crédit' : 'Demande en cours d\'examen');
+    }
+
+    // Prêts : Toujours disponibles (pas de limite)
+}
+
+// Désactiver une carte de demande
+function desactiverCarte(type, raison) {
+    const cartes = {
+        'epargne': document.querySelector('[onclick="ouvrirModalCompteEpargne()"]'),
+        'placement': document.querySelector('[onclick="ouvrirModalComptePlacement()"]'),
+        'credit': document.querySelector('[onclick="ouvrirModalCarteCredit()"]')
+    };
+
+    const carte = cartes[type];
+    if (carte) {
+        carte.style.opacity = '0.5';
+        carte.style.cursor = 'not-allowed';
+        carte.style.pointerEvents = 'none';
+        
+        const p = carte.querySelector('p');
+        if (p) {
+            p.innerHTML = `<strong style="color: #ef4444;">⚠️ ${raison}</strong>`;
+        }
+    }
+}
+
+// Charger les demandes
+async function chargerDemandes() {
+    try {
+        const response = await fetch(`${API_URL}/demandes/mes-demandes`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+        demandesExistantes = data.demandes || [];
+
+        const liste = document.getElementById('demandesList');
+        const emptyState = document.getElementById('emptyState');
+
+        if (data.succes && data.demandes.length > 0) {
+            liste.innerHTML = '';
+            emptyState.style.display = 'none';
+
+            data.demandes.forEach(demande => {
+                const li = document.createElement('li');
+                li.className = 'demande-item';
+
+                // Type de demande
+                const typeLabels = {
+                    'account_opening': 'Compte Épargne',
+                    'credit_card': 'Carte de crédit',
+                    'loan': 'Prêt personnel',
+                    'mortgage': 'Prêt hypothécaire',
+                    'investment': 'Compte de placement'
+                };
+
+                const typeLabel = typeLabels[demande.type_demande] || demande.type_demande;
+
+                // Badge statut
+                const statusBadges = {
+                    'pending': { class: 'badge-pending', label: 'En attente' },
+                    'approved': { class: 'badge-approved', label: 'Approuvée' },
+                    'rejected': { class: 'badge-rejected', label: 'Rejetée' }
+                };
+
+                const statusInfo = statusBadges[demande.statut] || { class: 'badge-pending', label: demande.statut };
+
+                // Date
+                const date = new Date(demande.date_demande).toLocaleDateString('fr-CA', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                li.innerHTML = `
+                    <div class="demande-info">
+                        <h4>${typeLabel}</h4>
+                        <p><strong>Date:</strong> ${date}</p>
+                        ${demande.commentaire_admin ? `<p><strong>Commentaire:</strong> ${demande.commentaire_admin}</p>` : ''}
+                    </div>
+                    <span class="badge ${statusInfo.class}">${statusInfo.label}</span>
+                `;
+
+                liste.appendChild(li);
+            });
+        } else {
+            liste.innerHTML = '';
+            emptyState.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Erreur chargement demandes:', error);
+    }
+}
+
+// Ouvrir modals
+function ouvrirModalCompteEpargne() {
+    document.getElementById('modalCompteEpargne').classList.add('active');
+    document.getElementById('formCompteEpargne').reset();
+    document.getElementById('alertEpargne').style.display = 'none';
+}
+
+function ouvrirModalComptePlacement() {
+    document.getElementById('modalComptePlacement').classList.add('active');
+    document.getElementById('formComptePlacement').reset();
+    document.getElementById('alertPlacement').style.display = 'none';
+}
+
+function ouvrirModalCarteCredit() {
+    document.getElementById('modalCarteCredit').classList.add('active');
+    document.getElementById('formCarteCredit').reset();
+    document.getElementById('alertCredit').style.display = 'none';
+}
+
+function ouvrirModalPretPersonnel() {
+    document.getElementById('modalPretPersonnel').classList.add('active');
+    document.getElementById('formPretPersonnel').reset();
+    document.getElementById('alertPret').style.display = 'none';
+}
+
+function ouvrirModalPretHypothecaire() {
+    document.getElementById('modalPretHypothecaire').classList.add('active');
+    document.getElementById('formPretHypothecaire').reset();
+    document.getElementById('alertHypothecaire').style.display = 'none';
+}
+
+// Fermer modal
+function fermerModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+// Soumettre demande compte épargne
+document.getElementById('formCompteEpargne').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const justification = document.getElementById('justificationEpargne').value.trim();
+
+    if (justification.length < 2) {
+        afficherAlerte('alertEpargne', 'La justification doit contenir au moins 2 caractères.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/demandes/nouvelle`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                typeDemande: 'account_opening',
+                typeCompte: 'savings',
+                justification
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.succes) {
+            fermerModal('modalCompteEpargne');
+            alert('✅ Demande soumise avec succès !');
+            initialiser();
+        } else {
+            afficherAlerte('alertEpargne', data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erreur soumission demande:', error);
+        afficherAlerte('alertEpargne', 'Erreur lors de la soumission.', 'error');
+    }
+});
+
+// Soumettre demande compte placement
+document.getElementById('formComptePlacement').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const typePlacement = document.getElementById('typePlacement').value;
+    const montantInitial = parseFloat(document.getElementById('montantInitialPlacement').value);
+    const justification = document.getElementById('justificationPlacement').value.trim();
+
+    if (justification.length < 2) {
+        afficherAlerte('alertPlacement', 'La justification doit contenir au moins 2 caractères.', 'error');
+        return;
+    }
+
+    if (montantInitial < 1000) {
+        afficherAlerte('alertPlacement', 'Le montant initial minimum est de 1,000$.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/demandes/nouvelle`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                typeDemande: 'investment',
+                typeCompte: typePlacement,
+                montantInitial,
+                justification
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.succes) {
+            fermerModal('modalComptePlacement');
+            alert('✅ Demande soumise avec succès !');
+            initialiser();
+        } else {
+            afficherAlerte('alertPlacement', data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erreur soumission demande:', error);
+        afficherAlerte('alertPlacement', 'Erreur lors de la soumission.', 'error');
+    }
+});
+
+// Soumettre demande carte crédit
+document.getElementById('formCarteCredit').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const limiteCredit = parseFloat(document.getElementById('limiteCredit').value);
+    const justification = document.getElementById('justificationCredit').value.trim();
+
+    if (justification.length < 2) {
+        afficherAlerte('alertCredit', 'La justification doit contenir au moins 2 caractères.', 'error');
+        return;
+    }
+
+    if (limiteCredit < 500 || limiteCredit > 50000) {
+        afficherAlerte('alertCredit', 'La limite de crédit doit être entre 500$ et 50,000$.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/demandes/nouvelle`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                typeDemande: 'credit_card',
+                typeCarte: 'credit',
+                limiteDemandee: limiteCredit,
+                justification
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.succes) {
+            fermerModal('modalCarteCredit');
+            alert('✅ Demande soumise avec succès !');
+            initialiser();
+        } else {
+            afficherAlerte('alertCredit', data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erreur soumission demande:', error);
+        afficherAlerte('alertCredit', 'Erreur lors de la soumission.', 'error');
+    }
+});
+
+// Soumettre demande prêt personnel
+document.getElementById('formPretPersonnel').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const montantPret = parseFloat(document.getElementById('montantPret').value);
+    const dureeMois = parseInt(document.getElementById('dureeMois').value);
+    const justification = document.getElementById('justificationPret').value.trim();
+
+    if (justification.length < 2) {
+        afficherAlerte('alertPret', 'La justification doit contenir au moins 2 caractères.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/demandes/nouvelle`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                typeDemande: 'loan',
+                montantDemande: montantPret,
+                dureeMois,
+                justification
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.succes) {
+            fermerModal('modalPretPersonnel');
+            alert('✅ Demande soumise avec succès !');
+            initialiser();
+        } else {
+            afficherAlerte('alertPret', data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erreur soumission demande:', error);
+        afficherAlerte('alertPret', 'Erreur lors de la soumission.', 'error');
+    }
+});
+
+// Soumettre demande prêt hypothécaire
+document.getElementById('formPretHypothecaire').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const montantHypothecaire = parseFloat(document.getElementById('montantHypothecaire').value);
+    const valeurPropriete = parseFloat(document.getElementById('valeurPropriete').value);
+    const justification = document.getElementById('justificationHypothecaire').value.trim();
+
+    if (justification.length < 2) {
+        afficherAlerte('alertHypothecaire', 'La justification doit contenir au moins 2 caractères.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/demandes/nouvelle`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                typeDemande: 'mortgage',
+                montantDemande: montantHypothecaire,
+                valeurPropriete,
+                justification
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.succes) {
+            fermerModal('modalPretHypothecaire');
+            alert('✅ Demande soumise avec succès !');
+            initialiser();
+        } else {
+            afficherAlerte('alertHypothecaire', data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erreur soumission demande:', error);
+        afficherAlerte('alertHypothecaire', 'Erreur lors de la soumission.', 'error');
+    }
+});
+
+// Afficher une alerte
+function afficherAlerte(elementId, message, type) {
+    const alertDiv = document.getElementById(elementId);
+    alertDiv.className = type === 'error' ? 'alert alert-error' : 'alert alert-warning';
+    alertDiv.innerHTML = message;
+    alertDiv.style.display = 'block';
+}
+
+// Déconnexion
+function deconnexion() {
+    if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
+        localStorage.removeItem('token');
+        window.location.href = 'index.html';
+    }
+}
+
+// Initialiser au chargement
+document.addEventListener('DOMContentLoaded', initialiser);

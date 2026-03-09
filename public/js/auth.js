@@ -1,217 +1,50 @@
-// ============================================
-// AUTH.JS — SPRINT 1 + 2FA
-// Logique de connexion et d'inscription
-// ============================================
+/**
+ * Script pour les pages d'authentification
+ */
 
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('formulaireConnexion')) {
-        initialiserPageConnexion();
-    }
-    if (document.getElementById('formulaireInscription')) {
-        initialiserPageInscription();
-    }
-});
+const API_URL = 'http://localhost:3000/api';
 
-// ──────────────────────────────────────────
-// PAGE CONNEXION (index.html)
-// ──────────────────────────────────────────
+// Page de connexion
+if (document.getElementById('connexionForm')) {
+    document.getElementById('connexionForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
 
-function initialiserPageConnexion() {
-    if (obtenirToken()) {
-        window.location.href = 'tableau-bord.html';
-        return;
-    }
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const errorDiv = document.getElementById('errorMessage');
+        
+        const email = document.querySelector('input[name="email"]').value;
+        const motDePasse = document.querySelector('input[name="motDePasse"]').value;
 
-    const formulaire = document.getElementById('formulaireConnexion');
-    const btnMdp = document.getElementById('btnAfficherMdp');
-    const champMdp = document.getElementById('motDePasse');
+        try {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Connexion...';
+            errorDiv.style.display = 'none';
 
-    if (btnMdp && champMdp) {
-        btnMdp.addEventListener('click', () => {
-            champMdp.type = champMdp.type === 'password' ? 'text' : 'password';
-            btnMdp.textContent = champMdp.type === 'password' ? '👁️' : '🙈';
-        });
-    }
+            const response = await fetch(`${API_URL}/auth/connexion`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, motDePasse })
+            });
 
-    if (formulaire) {
-        formulaire.addEventListener('submit', (e) => {
-            e.preventDefault();
-            connexion();
-        });
-    }
-}
+            const data = await response.json();
 
-async function connexion() {
-    const email = document.getElementById('email').value.trim();
-    const motDePasse = document.getElementById('motDePasse').value;
-    const btnConnexion = document.getElementById('btnConnexion');
-
-    if (!email || !motDePasse) {
-        afficherErreur('Veuillez remplir tous les champs.');
-        return;
-    }
-
-    afficherSpinner(btnConnexion);
-
-    try {
-        const { response, data } = await appelAPI('/auth/connexion', 'POST', { email, motDePasse });
-
-        if (response.ok && data.succes) {
-            // 2FA activé → redirection vers vérification
-            if (data.requires2FA) {
-                sessionStorage.setItem('banque_2fa_pending', JSON.stringify({
-                    userId: data.userId,
-                    email: data.email
-                }));
-                
-                afficherSucces(data.message || 'Code envoyé par email !');
-                setTimeout(() => { window.location.href = 'verification-2fa.html'; }, 1000);
-            } 
-            else {
-                sauvegarderToken(data.token);
-                afficherSucces('Connexion réussie ! Redirection...');
-                setTimeout(() => { window.location.href = 'tableau-bord.html'; }, 1000);
+            if (data.succes && data.requires2FA) {
+                sessionStorage.setItem('userId', data.userId);
+                window.location.href = 'verification-2fa.html';
+            } else if (!data.succes) {
+                errorDiv.textContent = data.message;
+                errorDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Se connecter';
             }
-        } else {
-            afficherErreur(data.message || 'Erreur de connexion');
-            masquerSpinner(btnConnexion);
-            if (data.tentativesRestantes !== undefined) {
-                afficherErreur(`${data.message} (${data.tentativesRestantes} tentative(s) restante(s))`);
-            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            errorDiv.textContent = 'Une erreur est survenue. Veuillez réessayer.';
+            errorDiv.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Se connecter';
         }
-    } catch (erreur) {
-        console.error('Erreur réseau:', erreur);
-        afficherErreur('Erreur réseau. Vérifiez votre connexion ou que le serveur est lancé.');
-        masquerSpinner(btnConnexion);
-    }
-}
-
-// ──────────────────────────────────────────
-// PAGE INSCRIPTION (inscription.html)
-// ──────────────────────────────────────────
-
-function initialiserPageInscription() {
-    if (obtenirToken()) {
-        window.location.href = 'tableau-bord.html';
-        return;
-    }
-
-    const formulaire = document.getElementById('formulaireInscription');
-    const btnMdp = document.getElementById('btnAfficherMdp');
-    const champMdp = document.getElementById('motDePasse');
-    const champConfirm = document.getElementById('confirmationMotDePasse');
-
-    if (btnMdp && champMdp) {
-        btnMdp.addEventListener('click', () => {
-            champMdp.type = champMdp.type === 'password' ? 'text' : 'password';
-            if (champConfirm) champConfirm.type = champMdp.type;
-            btnMdp.textContent = champMdp.type === 'password' ? '👁️' : '🙈';
-        });
-    }
-
-    if (champMdp) {
-        champMdp.addEventListener('input', () => {
-            mettreAJourIndicateurForce(champMdp.value);
-        });
-    }
-
-    if (formulaire) {
-        formulaire.addEventListener('submit', (e) => {
-            e.preventDefault();
-            inscription();
-        });
-    }
-}
-
-function mettreAJourIndicateurForce(motDePasse) {
-    const progression = document.getElementById('progressionMdp');
-    const texteForce = document.getElementById('texteForceMdp');
-
-    const longueur  = motDePasse.length >= 8;
-    const majuscule = /[A-Z]/.test(motDePasse);
-    const minuscule = /[a-z]/.test(motDePasse);
-    const chiffre   = /\d/.test(motDePasse);
-
-    const el = (id) => document.getElementById(id);
-    if (el('critere-longueur'))  { el('critere-longueur').className  = longueur  ? 'critere-satisfait' : ''; }
-    if (el('critere-majuscule')) { el('critere-majuscule').className = majuscule ? 'critere-satisfait' : ''; }
-    if (el('critere-minuscule')) { el('critere-minuscule').className = minuscule ? 'critere-satisfait' : ''; }
-    if (el('critere-chiffre'))   { el('critere-chiffre').className   = chiffre   ? 'critere-satisfait' : ''; }
-
-    const qi = (sel) => document.querySelector(sel);
-    if (qi('#critere-longueur .icone-critere'))  qi('#critere-longueur .icone-critere').textContent  = longueur  ? '✓' : '○';
-    if (qi('#critere-majuscule .icone-critere')) qi('#critere-majuscule .icone-critere').textContent = majuscule ? '✓' : '○';
-    if (qi('#critere-minuscule .icone-critere')) qi('#critere-minuscule .icone-critere').textContent = minuscule ? '✓' : '○';
-    if (qi('#critere-chiffre .icone-critere'))   qi('#critere-chiffre .icone-critere').textContent   = chiffre   ? '✓' : '○';
-
-    const score = [longueur, majuscule, minuscule, chiffre].filter(Boolean).length;
-    const niveaux = [
-        { texte: 'Entrez un mot de passe', classe: '', largeur: '0%' },
-        { texte: 'Très faible', classe: 'force-faible', largeur: '25%' },
-        { texte: 'Faible',      classe: 'force-faible', largeur: '25%' },
-        { texte: 'Moyen',       classe: 'force-moyen',  largeur: '50%' },
-        { texte: 'Fort',        classe: 'force-fort',   largeur: '100%' }
-    ];
-    const niveau = niveaux[score];
-    if (progression) { progression.style.width = niveau.largeur; progression.className = 'progression-mdp ' + niveau.classe; }
-    if (texteForce)  { texteForce.textContent = niveau.texte; texteForce.className = 'texte-force-mdp ' + niveau.classe; }
-}
-
-async function inscription() {
-    const prenom     = document.getElementById('prenom').value.trim();
-    const nom        = document.getElementById('nom').value.trim();
-    const email      = document.getElementById('email').value.trim();
-    const telephone  = document.getElementById('telephone').value.trim();
-    const adresse    = document.getElementById('adresse').value.trim();
-    const motDePasse = document.getElementById('motDePasse').value;
-    const confirmMdp = document.getElementById('confirmationMotDePasse').value;
-    const accepter   = document.getElementById('accepterConditions').checked;
-    const btnInscription = document.getElementById('btnInscription');
-
-    if (!prenom || prenom.length < 2) { afficherErreur('Le prénom doit contenir au moins 2 caractères.'); return; }
-    if (!nom || nom.length < 2)       { afficherErreur('Le nom doit contenir au moins 2 caractères.'); return; }
-    if (!email)                       { afficherErreur('L\'adresse email est requise.'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { afficherErreur('Format d\'email invalide.'); return; }
-    if (!motDePasse || motDePasse.length < 8) { afficherErreur('Le mot de passe doit avoir au moins 8 caractères.'); return; }
-    if (!/[A-Z]/.test(motDePasse))    { afficherErreur('Le mot de passe doit contenir une majuscule.'); return; }
-    if (!/[a-z]/.test(motDePasse))    { afficherErreur('Le mot de passe doit contenir une minuscule.'); return; }
-    if (!/\d/.test(motDePasse))       { afficherErreur('Le mot de passe doit contenir un chiffre.'); return; }
-    if (motDePasse !== confirmMdp)    { afficherErreur('Les mots de passe ne correspondent pas.'); return; }
-    if (!accepter) { afficherErreur('Vous devez accepter les conditions.'); return; }
-
-    afficherSpinner(btnInscription);
-
-    try {
-        const { response, data } = await appelAPI('/auth/inscription', 'POST', {
-            email, motDePasse, prenom, nom, telephone, adresse
-        });
-
-        if (response.ok && data.succes) {
-            // ───────────────────────────────────
-            // NOUVEAU : Inscription redirige vers 2FA
-            // ───────────────────────────────────
-            if (data.requires2FA) {
-                sessionStorage.setItem('banque_2fa_pending', JSON.stringify({
-                    userId: data.userId,
-                    email: data.email
-                }));
-                
-                afficherSucces(data.message || 'Inscription réussie ! Code envoyé par email.');
-                setTimeout(() => { window.location.href = 'verification-2fa.html'; }, 1500);
-            }
-            // Ancienne logique (si 2FA désactivé — ne devrait plus arriver)
-            else {
-                sauvegarderToken(data.token);
-                afficherSucces('Compte créé avec succès ! Redirection...');
-                setTimeout(() => { window.location.href = 'tableau-bord.html'; }, 1500);
-            }
-        } else {
-            afficherErreur(data.message || 'Erreur lors de l\'inscription');
-            masquerSpinner(btnInscription);
-        }
-    } catch (erreur) {
-        console.error('Erreur réseau:', erreur);
-        afficherErreur('Erreur réseau. Vérifiez que le serveur est lancé.');
-        masquerSpinner(btnInscription);
-    }
+    });
 }

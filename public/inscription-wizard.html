@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - Fortivia Bank</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            padding: 20px 0;
+        }
+
+        .wizard-container {
+            background: white;
+            border-radius: 16px;
+            padding: 48px 40px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .logo-icon svg {
+            width: 36px;
+            height: 36px;
+            fill: white;
+        }
+
+        .logo h1 {
+            color: #1f2937;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+        }
+
+        .logo p {
+            color: #6b7280;
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .progress-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+            padding: 0 20px;
+        }
+
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 60px;
+            right: 60px;
+            height: 3px;
+            background: #e5e7eb;
+            z-index: 0;
+        }
+
+        .progress-bar .step {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s;
+            color: #9ca3af;
+        }
+
+        .progress-bar .step.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .progress-bar .step.completed {
+            background: #10b981;
+            color: white;
+        }
+
+        .wizard-step {
+            display: none;
+        }
+
+        .wizard-step.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-title {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .step-title h2 {
+            color: #1f2937;
+            font-size: 22px;
+            margin: 0 0 8px 0;
+        }
+
+        .step-title p {
+            color: #6b7280;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.2s;
+            box-sizing: border-box;
+            background: #f9fafb;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group small {
+            color: #6b7280;
+            font-size: 13px;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .password-strength {
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s;
+        }
+
+        .strength-weak { background: #ef4444; width: 33%; }
+        .strength-medium { background: #f59e0b; width: 66%; }
+        .strength-strong { background: #10b981; width: 100%; }
+
+        .age-warning {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-top: 8px;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+            border-left: 4px solid #ef4444;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .copyright {
+            text-align: center;
+            margin-top: 24px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .form-footer p {
+            color: #6b7280;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .form-footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="wizard-container">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                </svg>
+            </div>
+            <h1>Fortivia Bank</h1>
+            <p>Créez votre compte</p>
+        </div>
+
+        <!-- Barre de progression -->
+        <div class="progress-bar">
+            <div class="step active" data-step="1">1</div>
+            <div class="step" data-step="2">2</div>
+            <div class="step" data-step="3">3</div>
+            <div class="step" data-step="4">4</div>
+        </div>
+
+        <!-- Message d'erreur -->
+        <div id="errorMessage" class="error-message"></div>
+
+        <!-- Formulaire -->
+        <form id="inscriptionForm">
+            
+            <!-- Étape 1 : Informations personnelles -->
+            <div class="wizard-step active" data-step="1">
+                <div class="step-title">
+                    <h2>Informations personnelles</h2>
+                    <p>Étape 1 sur 4</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Prénom *</label>
+                    <input type="text" name="prenom" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Nom *</label>
+                    <input type="text" name="nom" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Date de naissance *</label>
+                    <input type="date" name="dateNaissance" id="dateNaissance" required>
+                    <div id="ageWarning" class="age-warning" style="display: none;">
+                        ⚠️ Vous devez avoir au moins 16 ans pour créer un compte.
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Sexe *</label>
+                    <select name="sexe" required>
+                        <option value="">-- Sélectionner --</option>
+                        <option value="male">Homme</option>
+                        <option value="female">Femme</option>
+                        <option value="other">Autre</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Étape 2 : Coordonnées -->
+            <div class="wizard-step" data-step="2">
+                <div class="step-title">
+                    <h2>Coordonnées</h2>
+                    <p>Étape 2 sur 4</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" name="email" placeholder="exemple@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Téléphone *</label>
+                    <input type="tel" name="telephone" placeholder="5141234567" required>
+                    <small>10 chiffres sans espaces</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Adresse complète *</label>
+                    <input type="text" name="adresse" placeholder="123 Rue Example, Montréal, QC H1A 1A1" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Type de résidence *</label>
+                    <select name="typeResidence" required>
+                        <option value="">-- Sélectionner --</option>
+                        <option value="owner">Propriétaire</option>
+                        <option value="tenant">Locataire</option>
+                        <option value="other">Autre</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Étape 3 : Informations financières -->
+            <div class="wizard-step" data-step="3">
+                <div class="step-title">
+                    <h2>Informations financières</h2>
+                    <p>Étape 3 sur 4</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Statut *</label>
+                    <select name="statut" id="statut" required>
+                        <option value="">-- Sélectionner --</option>
+                        <option value="student">Étudiant</option>
+                        <option value="employee">Employé</option>
+                        <option value="professional">Professionnel</option>
+                        <option value="retired">Retraité</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Revenu annuel (CAD) *</label>
+                    <input type="number" name="revenuAnnuel" min="0" step="1000" placeholder="50000" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Numéro d'assurance sociale (NAS)</label>
+                    <input type="text" name="nas" placeholder="123-456-789" maxlength="11">
+                    <small>Optionnel - Format: XXX-XXX-XXX</small>
+                </div>
+            </div>
+
+            <!-- Étape 4 : Sécurité -->
+            <div class="wizard-step" data-step="4">
+                <div class="step-title">
+                    <h2>Sécurité du compte</h2>
+                    <p>Étape 4 sur 4</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Mot de passe *</label>
+                    <input type="password" name="motDePasse" id="motDePasse" required>
+                    <div class="password-strength">
+                        <div id="passwordStrengthBar" class="password-strength-bar"></div>
+                    </div>
+                    <small>Minimum 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Confirmer le mot de passe *</label>
+                    <input type="password" name="confirmerMotDePasse" id="confirmerMotDePasse" required>
+                </div>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" name="conditions" required style="width: auto; margin-right: 10px;">
+                        J'accepte les conditions d'utilisation et la politique de confidentialité
+                    </label>
+                </div>
+            </div>
+
+            <!-- Boutons de navigation -->
+            <div class="btn-group">
+                <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">← Précédent</button>
+                <button type="button" class="btn btn-primary" id="nextBtn">Suivant →</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn" style="display: none;">S'inscrire</button>
+            </div>
+        </form>
+
+        <div class="form-footer">
+            <p>Vous avez déjà un compte ? <a href="index.html">Se connecter</a></p>
+        </div>
+
+        <div class="copyright">
+            © 2026 Fortivia Bank. Tous droits réservés.
+        </div>
+    </div>
+
+    <script src="js/inscription-wizard.js"></script>
+</body>
+</html>
