@@ -280,10 +280,10 @@ exports.renvoyerCode2FA = async (req, res, next) => {
 
     const nouveauCode = verificationModel.genererCode();
     await verificationModel.creer({
-      utilisateurId: userId,
-      code: nouveauCode,
-      type: '2fa'
-    });
+  utilisateurId: user.id,
+  code: code2FA,
+  type: '2fa_login'
+  });
 
     const utilisateur = await query(
       'SELECT email, first_name AS prenom FROM users WHERE id = $1',
