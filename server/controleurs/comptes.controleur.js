@@ -136,3 +136,66 @@ exports.retraitCompte = async (req, res, next) => {
     next(error);
   }
 };
+
+// Paiement de facture
+exports.payerFacture = async (req, res, next) => {
+  try {
+    const { compteId } = req.params;
+    const { montant, fournisseur } = req.body;
+    const utilisateurId = req.user.id;
+
+    const compte = await compteModel.trouverParId(compteId);
+
+    if (!compte || compte.utilisateur_id !== utilisateurId) {
+      return res.status(404).json({
+        succes: false,
+        message: 'Compte introuvable'
+      });
+    }
+
+    if (!montant || Number(montant) <= 0) {
+      return res.status(400).json({
+        succes: false,
+        message: 'Montant invalide'
+      });
+    }
+
+    if (!fournisseur || !fournisseur.trim()) {
+      return res.status(400).json({
+        succes: false,
+        message: 'Fournisseur requis'
+      });
+    }
+
+    if (Number(compte.solde) < Number(montant)) {
+      return res.status(400).json({
+        succes: false,
+        message: 'Solde insuffisant'
+      });
+    }
+
+    const nouveauSolde = Number(compte.solde) - Number(montant);
+
+    await query(
+      `UPDATE accounts SET balance = $1 WHERE id = $2`,
+      [nouveauSolde, compteId]
+    );
+
+    const transaction = await transactionModel.creer({
+      compteId,
+      typeTransaction: 'payment',
+      montant: Number(montant),
+      soldeApres: nouveauSolde,
+      description: `Paiement facture - ${fournisseur}`
+    });
+
+    res.json({
+      succes: true,
+      message: 'Paiement de facture effectué avec succès',
+      transaction
+    });
+  } catch (error) {
+    console.error('Erreur paiement facture:', error);
+    next(error);
+  }
+};

@@ -12,5 +12,6 @@ router.get('/resume-soldes', comptesControleur.resumeSoldes);
 router.get('/:compteId', comptesControleur.detailCompte);
 router.get('/:compteId/transactions', comptesControleur.transactionsCompte);
 router.post('/:compteId/retrait', comptesControleur.retraitCompte);
+router.post('/:compteId/paiement-facture', comptesControleur.payerFacture);
 
 module.exports = router;
