@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes demandes - Fortivia Bank</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            background: #f3f4f6;
+            display: block;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 40px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+        }
+
+        .navbar-brand .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .navbar-brand .logo-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        .navbar-brand span {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .navbar-menu {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .navbar-menu a {
+            text-decoration: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .navbar-menu a:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .navbar-menu a.active {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 32px auto;
+            padding: 0 20px;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-header h1 {
+            color: #1f2937;
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .page-header p {
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .section-card h2 {
+            color: #1f2937;
+            font-size: 22px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-card h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .demande-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .demande-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .demande-card:hover {
+            border-color: #667eea;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+        }
+
+        .demande-card .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .demande-card h3 {
+            color: #1f2937;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .demande-card p {
+            color: #6b7280;
+            font-size: 14px;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .demandes-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .demande-item {
+            background: #f9fafb;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .demande-info h4 {
+            color: #1f2937;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .demande-info p {
+            color: #6b7280;
+            font-size: 14px;
+            margin: 4px 0;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-approved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .modal-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        }
+
+        .modal-content h3 {
+            color: #1f2937;
+            font-size: 24px;
+            margin-bottom: 24px;
+            font-weight: 700;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group small {
+            color: #6b7280;
+            font-size: 13px;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .alert {
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 24px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                </svg>
+            </div>
+            <span>Fortivia Bank</span>
+        </div>
+        <div class="navbar-menu">
+            <a href="tableau-bord.html">📊 Dashboard</a>
+            <a href="mes-demandes.html" class="active">📝 Mes demandes</a>
+            <a href="mes-cartes.html">💳 Mes cartes</a>
+            <button class="btn-logout" onclick="deconnexion()">Déconnexion</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Mes demandes</h1>
+            <p>Gérez vos demandes de services bancaires</p>
+        </div>
+
+        <div class="section-card">
+            <h2>Faire une nouvelle demande</h2>
+            <div class="demande-types">
+                <div class="demande-card" onclick="ouvrirModalCompteEpargne()">
+                    <div class="icon">💰</div>
+                    <h3>Compte Épargne</h3>
+                    <p>Ouvrez un compte épargne avec un taux d'intérêt attractif pour faire fructifier votre argent</p>
+                </div>
+
+                <div class="demande-card" onclick="ouvrirModalComptePlacement()">
+                    <div class="icon">📈</div>
+                    <h3>Compte de Placement</h3>
+                    <p>Investissez dans des CELI, REER ou comptes non enregistrés pour planifier votre avenir</p>
+                </div>
+
+                <div class="demande-card" onclick="ouvrirModalCarteCredit()">
+                    <div class="icon">💳</div>
+                    <h3>Carte de Crédit</h3>
+                    <p>Obtenez une carte de crédit avec une limite adaptée à votre profil et vos besoins</p>
+                </div>
+
+                <div class="demande-card" onclick="ouvrirModalPretPersonnel()">
+                    <div class="icon">💵</div>
+                    <h3>Prêt Personnel</h3>
+                    <p>Financez vos projets avec un prêt personnel à taux compétitif jusqu'à 50,000$</p>
+                </div>
+
+                <div class="demande-card" onclick="ouvrirModalPretHypothecaire()">
+                    <div class="icon">🏠</div>
+                    <h3>Prêt Hypothécaire</h3>
+                    <p>Réalisez votre rêve d'accession à la propriété avec nos solutions hypothécaires</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h2>Historique de mes demandes</h2>
+            <ul id="demandesList" class="demandes-list"></ul>
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <h3>Aucune demande pour le moment</h3>
+                <p>Commencez par faire une demande ci-dessus</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalCompteEpargne" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">💰</div>
+                <h3>Demande de compte Épargne</h3>
+            </div>
+
+            <div id="alertEpargne" class="alert alert-error"></div>
+
+            <form id="formCompteEpargne">
+                <div class="form-group">
+                    <label>Justification de votre demande *</label>
+                    <textarea id="justificationEpargne" rows="4" placeholder="Expliquez pourquoi vous souhaitez ouvrir un compte épargne..." required></textarea>
+                    <small>Minimum 2 caractères</small>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="fermerModal('modalCompteEpargne')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Soumettre la demande</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalComptePlacement" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">📈</div>
+                <h3>Demande de compte de Placement</h3>
+            </div>
+
+            <div id="alertPlacement" class="alert alert-error"></div>
+
+            <form id="formComptePlacement">
+                <div class="form-group">
+                    <label>Type de compte *</label>
+                    <select id="typePlacement" required>
+                        <option value="">-- Sélectionner --</option>
+                        <option value="CELI">CELI (Compte d'épargne libre d'impôt)</option>
+                        <option value="REER">REER (Régime enregistré d'épargne-retraite)</option>
+                        <option value="Non enregistré">Compte non enregistré</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Montant initial de placement (CAD) *</label>
+                    <input type="number" id="montantInitialPlacement" min="1000" step="100" placeholder="5000" required>
+                    <small>Minimum 1,000$</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Justification *</label>
+                    <textarea id="justificationPlacement" rows="4" placeholder="Objectifs d'investissement..." required></textarea>
+                    <small>Minimum 2 caractères</small>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="fermerModal('modalComptePlacement')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Soumettre la demande</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalCarteCredit" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">💳</div>
+                <h3>Demande de carte de crédit</h3>
+            </div>
+
+            <div id="alertCredit" class="alert alert-error"></div>
+
+            <form id="formCarteCredit">
+                <div class="form-group">
+                    <label>Limite de crédit souhaitée (CAD) *</label>
+                    <input type="number" id="limiteCredit" min="500" max="50000" step="100" placeholder="5000" required>
+                    <small>Entre 500$ et 50,000$</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Justification *</label>
+                    <textarea id="justificationCredit" rows="4" placeholder="Expliquez pourquoi vous avez besoin d'une carte de crédit..." required></textarea>
+                    <small>Minimum 2 caractères</small>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="fermerModal('modalCarteCredit')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Soumettre la demande</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalPretPersonnel" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">💵</div>
+                <h3>Demande de prêt personnel</h3>
+            </div>
+
+            <div id="alertPret" class="alert alert-error"></div>
+
+            <form id="formPretPersonnel">
+                <div class="form-group">
+                    <label>Montant du prêt (CAD) *</label>
+                    <input type="number" id="montantPret" min="1000" max="50000" step="100" placeholder="10000" required>
+                    <small>Entre 1,000$ et 50,000$</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Durée souhaitée (mois) *</label>
+                    <select id="dureeMois" required>
+                        <option value="">-- Sélectionner --</option>
+                        <option value="12">12 mois</option>
+                        <option value="24">24 mois</option>
+                        <option value="36">36 mois</option>
+                        <option value="48">48 mois</option>
+                        <option value="60">60 mois</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Justification *</label>
+                    <textarea id="justificationPret" rows="4" placeholder="Raison du prêt (rénovations, voyage, consolidation de dettes...)" required></textarea>
+                    <small>Minimum 2 caractères</small>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="fermerModal('modalPretPersonnel')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Soumettre la demande</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalPretHypothecaire" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">🏠</div>
+                <h3>Demande de prêt hypothécaire</h3>
+            </div>
+
+            <div id="alertHypothecaire" class="alert alert-error"></div>
+
+            <form id="formPretHypothecaire">
+                <div class="form-group">
+                    <label>Montant du prêt hypothécaire (CAD) *</label>
+                    <input type="number" id="montantHypothecaire" min="50000" step="1000" placeholder="300000" required>
+                    <small>Minimum 50,000$</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Valeur estimée de la propriété (CAD) *</label>
+                    <input type="number" id="valeurPropriete" min="75000" step="1000" placeholder="400000" required>
+                    <small>Minimum 75,000$</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Type de propriété *</label>
+                    <select id="typePropriete" required>
+                        <option value="">-- Sélectionner --</option>
+                        <option value="Maison unifamiliale">Maison unifamiliale</option>
+                        <option value="Condo">Condo/Appartement</option>
+                        <option value="Duplex">Duplex/Triplex</option>
+                        <option value="Terrain">Terrain</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Justification *</label>
+                    <textarea id="justificationHypothecaire" rows="4" placeholder="Détails sur votre projet d'achat immobilier..." required></textarea>
+                    <small>Minimum 2 caractères</small>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="fermerModal('modalPretHypothecaire')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Soumettre la demande</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/auth-check.js"></script>
+    <script src="js/mes-demandes.js"></script>
+</body>
+</html>

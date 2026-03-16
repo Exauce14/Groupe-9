@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Fortivia Bank</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            background: #f3f4f6;
+            display: block;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 40px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+        }
+
+        .navbar-brand .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .navbar-brand .logo-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        .navbar-brand span {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .navbar-menu {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .navbar-menu a {
+            text-decoration: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .navbar-menu a:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .navbar-menu a.active {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .notification-badge {
+            background: #ef4444;
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 6px;
+        }
+
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 32px auto;
+            padding: 0 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            color: #1f2937;
+            font-size: 36px;
+            font-weight: 700;
+        }
+
+        .section-card {
+            background: white;
+            padding: 28px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .section-header h2 {
+            color: #1f2937;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0;
+        }
+
+        .section-header h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f9fafb;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+            color: #374151;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-approved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-student {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-employee {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+
+        .badge-professional {
+            background: #fce7f3;
+            color: #9f1239;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+            margin-right: 8px;
+        }
+
+        .btn-approve {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-approve:hover {
+            background: #059669;
+        }
+
+        .btn-reject {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-reject:hover {
+            background: #dc2626;
+        }
+
+        .btn-block {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-block:hover {
+            background: #d97706;
+        }
+
+        .btn-unblock {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-unblock:hover {
+            background: #059669;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 520px;
+            width: 90%;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        }
+
+        .modal-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .modal-icon.success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        }
+
+        .modal-icon.danger {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        }
+
+        .modal-content h3 {
+            color: #1f2937;
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .modal-content p {
+            color: #6b7280;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 24px;
+        }
+
+        .modal-actions .btn {
+            min-width: 120px;
+            padding: 12px 24px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                </svg>
+            </div>
+            <span>Fortivia Bank Admin</span>
+        </div>
+        <div class="navbar-menu">
+            <a href="#" onclick="afficherSection('dashboard')" class="active" id="navDashboard">📊 Dashboard</a>
+            <a href="#" onclick="afficherSection('inscriptions')" id="navInscriptions">
+                📝 Inscriptions
+                <span id="inscriptionsBadge" class="notification-badge" style="display: none;">0</span>
+            </a>
+            <a href="#" onclick="afficherSection('demandes')" id="navDemandes">
+                📋 Demandes
+                <span id="demandesBadge" class="notification-badge" style="display: none;">0</span>
+            </a>
+            <a href="#" onclick="afficherSection('utilisateurs')" id="navUtilisateurs">👥 Utilisateurs</a>
+            <button class="btn-logout" onclick="deconnexion()">Déconnexion</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- SECTION DASHBOARD -->
+        <div id="sectionDashboard">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Inscriptions en attente</div>
+                    <div class="stat-value" id="statInscriptions">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Demandes en attente</div>
+                    <div class="stat-value" id="statDemandes">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Utilisateurs actifs</div>
+                    <div class="stat-value" id="statUtilisateurs">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Cartes actives</div>
+                    <div class="stat-value" id="statCartes">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION INSCRIPTIONS -->
+        <div id="sectionInscriptions" style="display: none;">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>Inscriptions en attente</h2>
+                </div>
+                <table id="inscriptionsTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Email</th>
+                            <th>Date de naissance</th>
+                            <th>Statut</th>
+                            <th>Revenu annuel</th>
+                            <th>Date d'inscription</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div id="inscriptionsEmpty" class="empty-state">
+                    <h3>✅ Aucune inscription en attente</h3>
+                    <p>Toutes les inscriptions ont été traitées</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION DEMANDES -->
+        <div id="sectionDemandes" style="display: none;">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>Demandes en attente</h2>
+                </div>
+                <table id="demandesTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Utilisateur</th>
+                            <th>Type</th>
+                            <th>Détails</th>
+                            <th>Revenu</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div id="demandesEmpty" class="empty-state">
+                    <h3>✅ Aucune demande en attente</h3>
+                    <p>Toutes les demandes ont été traitées</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION UTILISATEURS -->
+        <div id="sectionUtilisateurs" style="display: none;">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>Tous les utilisateurs</h2>
+                </div>
+                <table id="utilisateursTable">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Email</th>
+                            <th>Statut</th>
+                            <th>Revenu</th>
+                            <th>Inscription</th>
+                            <th>Approbation</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL APPROUVER INSCRIPTION -->
+    <div id="approveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-icon success">✓</div>
+            <h3>Approuver l'inscription</h3>
+            <p id="approveUserName"></p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('approveModal')">Annuler</button>
+                <button class="btn btn-approve" onclick="confirmApprove()">Approuver</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL REJETER INSCRIPTION -->
+    <div id="rejectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-icon danger">✕</div>
+            <h3 id="rejectUserName"></h3>
+            <form id="rejectForm">
+                <div class="form-group">
+                    <label>Raison du rejet *</label>
+                    <textarea id="rejectReason" required placeholder="Expliquez la raison du rejet..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('rejectModal')">Annuler</button>
+                    <button type="submit" class="btn btn-reject">Rejeter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL APPROUVER DEMANDE -->
+    <div id="approveDemandeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-icon success">✓</div>
+            <h3>Approuver la demande</h3>
+            <p id="approveDemandeInfo"></p>
+            <form id="approveDemandeForm">
+                <div class="form-group">
+                    <label>Commentaire (optionnel)</label>
+                    <textarea id="approveDemandeComment" placeholder="Ajoutez un commentaire..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('approveDemandeModal')">Annuler</button>
+                    <button type="submit" class="btn btn-approve">Approuver</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL REJETER DEMANDE -->
+    <div id="rejectDemandeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-icon danger">✕</div>
+            <h3 id="rejectDemandeInfo"></h3>
+            <form id="rejectDemandeForm">
+                <div class="form-group">
+                    <label>Raison du rejet *</label>
+                    <textarea id="rejectDemandeReason" required placeholder="Expliquez la raison du rejet..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('rejectDemandeModal')">Annuler</button>
+                    <button type="submit" class="btn btn-reject">Rejeter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/admin-dashboard.js"></script>
+</body>
+</html>

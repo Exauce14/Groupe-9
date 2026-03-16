@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - Fortivia Bank</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            background: #f3f4f6;
+            display: block;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 40px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+        }
+
+        .navbar-brand .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .navbar-brand .logo-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        .navbar-brand span {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .navbar-menu {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .navbar-menu a {
+            text-decoration: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .navbar-menu a:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 32px auto;
+            padding: 0 20px;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-header h1 {
+            color: #1f2937;
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .page-header p {
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        .section-card {
+            background: white;
+            padding: 28px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .notifications-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .notification-item {
+            padding: 20px;
+            border-left: 4px solid #667eea;
+            background: #f9fafb;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .notification-item:hover {
+            background: #f3f4f6;
+            transform: translateX(4px);
+        }
+
+        .notification-item.unread {
+            background: #eff6ff;
+            border-left-color: #3b82f6;
+        }
+
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 16px;
+        }
+
+        .notification-time {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .notification-message {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .unread-badge {
+            background: #3b82f6;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+
+        .btn-marquer-lues {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .btn-marquer-lues:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                </svg>
+            </div>
+            <span>Fortivia Bank</span>
+        </div>
+        <div class="navbar-menu">
+            <a href="tableau-bord.html">📊 Dashboard</a>
+            <a href="mes-demandes.html">📝 Mes demandes</a>
+            <a href="mes-cartes.html">💳 Mes cartes</a>
+            <button class="btn-logout" onclick="deconnexion()">Déconnexion</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Notifications</h1>
+            <p>Restez informé de l'activité sur votre compte</p>
+        </div>
+
+        <div class="section-card">
+            <button class="btn-marquer-lues" onclick="marquerToutesLues()" id="btnMarquerLues" style="display: none;">
+                ✓ Marquer toutes comme lues
+            </button>
+
+            <ul id="notificationsList" class="notifications-list"></ul>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <h3>Aucune notification</h3>
+                <p>Vous n'avez pas encore de notifications</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        let token = localStorage.getItem('token');
+
+        if (!token) {
+            window.location.href = 'index.html';
+        }
+
+        // Charger les notifications
+        async function chargerNotifications() {
+            try {
+                const response = await fetch(`${API_URL}/notifications/mes-notifications`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+
+                const liste = document.getElementById('notificationsList');
+                const emptyState = document.getElementById('emptyState');
+                const btnMarquer = document.getElementById('btnMarquerLues');
+
+                if (data.succes && data.notifications.length > 0) {
+                    liste.innerHTML = '';
+                    emptyState.style.display = 'none';
+
+                    // Vérifier s'il y a des notifications non lues
+                    const nonLues = data.notifications.filter(n => !n.lue);
+                    if (nonLues.length > 0) {
+                        btnMarquer.style.display = 'block';
+                    }
+
+                    data.notifications.forEach(notif => {
+                        const li = document.createElement('li');
+                        li.className = notif.lue ? 'notification-item' : 'notification-item unread';
+                        li.onclick = () => marquerCommeLue(notif.id);
+
+                        const date = new Date(notif.date_creation);
+                        const temps = formatTemps(date);
+
+                        li.innerHTML = `
+                            <div class="notification-header">
+                                <div class="notification-title">
+                                    ${notif.titre}
+                                    ${!notif.lue ? '<span class="unread-badge">NOUVEAU</span>' : ''}
+                                </div>
+                                <div class="notification-time">${temps}</div>
+                            </div>
+                            <div class="notification-message">${notif.message}</div>
+                        `;
+
+                        liste.appendChild(li);
+                    });
+                } else {
+                    liste.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    btnMarquer.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Erreur chargement notifications:', error);
+            }
+        }
+
+        // Marquer une notification comme lue
+        async function marquerCommeLue(notifId) {
+            try {
+                await fetch(`${API_URL}/notifications/${notifId}/marquer-lue`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                chargerNotifications();
+            } catch (error) {
+                console.error('Erreur marquer notification:', error);
+            }
+        }
+
+        // Marquer toutes comme lues
+        async function marquerToutesLues() {
+            try {
+                await fetch(`${API_URL}/notifications/marquer-toutes-lues`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                chargerNotifications();
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        // Formater le temps écoulé
+        function formatTemps(date) {
+            const maintenant = new Date();
+            const diff = Math.floor((maintenant - date) / 1000); // en secondes
+
+            if (diff < 60) return 'À l\'instant';
+            if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`;
+            if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)} h`;
+            if (diff < 604800) return `Il y a ${Math.floor(diff / 86400)} j`;
+            
+            return date.toLocaleDateString('fr-CA', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+
+        function deconnexion() {
+            if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
+                localStorage.removeItem('token');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Charger au démarrage
+        document.addEventListener('DOMContentLoaded', chargerNotifications);
+    </script>
+</body>
+</html>
