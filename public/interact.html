@@ -239,7 +239,7 @@
                 console.log('Réponse de sécurité sauvegardée:', securityAnswer.value);
             });
         }
-        
+
 
 
 
@@ -312,11 +312,18 @@
                 });
 
                 const senderData = await senderResponse.json();
+                if (!senderData.succes || !senderData.utilisateur) {
+                    throw new Error('Impossible de récupérer le profil expéditeur');
+                }
 
                 const senderAccountResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${senderData.utilisateur.id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const senderAccount = await senderAccountResponse.json();
+
+                if (!senderAccount.succes || !senderAccount.user) {
+                    throw new Error('Impossible de récupérer le compte expéditeur');
+                }
 
                 const solde = parseFloat(datas.user.amount);
                 const montant = parseFloat(amount.value);
@@ -348,7 +355,7 @@
                                     method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json',
-                                        'Authorization': `Bearer ${token}` // 🔥 OBLIGATOIRE
+                                        'Authorization': `Bearer ${token}`
                                     },
                                     body: JSON.stringify({
                                         user_id: data.user.id,
@@ -370,12 +377,19 @@
                                     console.error("Erreur lors de la création de la notification pour le bénéficiaire:", notifData.message);
                                 }
 
-                                // Mettre à jour le solde du expéditeur
-                                //  récupérer compte expéditeur pour avoir le solde actuel
+                                // Mettre à jour le solde de l'expéditeur
+                                // Récupérer le compte expéditeur pour avoir le solde actuel
                                 const senderAccountResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${senderData.utilisateur.id}`, {
                                     headers: { 'Authorization': `Bearer ${token}` }
                                 });
                                 const senderAccount = await senderAccountResponse.json();
+
+                                if (!senderAccount.succes || !senderAccount.user) {
+                                    throw new Error('Impossible de récupérer le compte expéditeur (schema attendu non trouvé)');
+                                }
+
+                                const senderOldBalance = parseFloat(senderAccount.user.amount);
+                                const senderNewBalance = (senderOldBalance - montant).toFixed(2);
 
                                 const updateResponseSender = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${senderData.utilisateur.id}`, {
                                     method: 'PUT',
@@ -384,24 +398,36 @@
                                         'Authorization': `Bearer ${token}`
                                     },
                                     body: JSON.stringify({
-                                        newBalance: (parseFloat(senderAccount.user.amount) - parseFloat(amount.value)).toFixed(2)
+                                        newBalance: senderNewBalance
                                     })
                                 });
 
                                 const updateDataSender = await updateResponseSender.json();
 
                                 if (updateDataSender.succes) {
-                                    console.log("Solde mis à jour pour l'expéditeur:", updateDataSender.account.amount);
+                                    console.log("Solde mis à jour pour l'expéditeur:", senderNewBalance);
                                 } else {
-                                    console.error("Erreur lors de la mise à jour du solde de l'expéditeur:", updateDataSender.message);
-
+                                    console.error("Erreur lors de la mise à jour du solde de l'expéditeur:", updateDataSender.message || updateDataSender);
                                 }
 
+                                const transactionResponse = await fetch(`${API_URL}/transactions/creer/notif/transaction`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({
+                                        accountId: senderAccount.user.user_id, // ✅ corrigé
+                                        type: 'transfer', // ✅ valeur valide PostgreSQL
+                                        amount: montant,
+                                        balanceAfter: (parseFloat(senderAccount.user.amount) - montant).toFixed(2),
+                                        description: `Transfert de ${montant.toFixed(2)} € envoyé à ${recipient.value}`
+                                    })
+                                });
 
 
-
-
-
+                                const transactionData = await transactionResponse.json();
+                                console.log("Transaction créée :", transactionData);
 
 
 

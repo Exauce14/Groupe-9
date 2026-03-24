@@ -61,6 +61,8 @@ async function updateParUserId(userId, newBalance) {
     [newBalance, userId]
   );
   return res.rows[0] || null;
+
+  console.log("UPDATE balance pour user_id:", userId);
 }
 
 module.exports = {

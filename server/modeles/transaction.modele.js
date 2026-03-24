@@ -2,9 +2,12 @@ const { query } = require('../config/baseDeDonnees');
 
 // Créer une transaction
 exports.creer = async ({ compteId, typeTransaction, montant, soldeApres, description }) => {
+  //Générer la référence ici
+  const reference = 'TRX-' + Date.now().toString().slice(-6);
+
   const res = await query(
-    `INSERT INTO transactions (account_id, transaction_type, amount, balance_after, description)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO transactions (account_id, transaction_type, amount, balance_after, description, reference_number)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING 
        id,
        account_id AS compte_id,
@@ -14,7 +17,7 @@ exports.creer = async ({ compteId, typeTransaction, montant, soldeApres, descrip
        description,
        reference_number AS numero_reference,
        created_at AS cree_le`,
-    [compteId, typeTransaction, montant, soldeApres, description]
+    [compteId, typeTransaction, montant, soldeApres, description, reference]
   );
   return res.rows[0];
 };

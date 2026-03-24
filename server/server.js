@@ -23,6 +23,7 @@ app.use('/api/demandes', require('./routes/demandes.routes'));
 app.use('/api/notifications', require('./routes/notifications.routes'));
 app.use('/api/utilisateurs', require('./routes/utilisateurs.routes'));
 app.use('/api/beneficiaires', require('./routes/beneficiaire.routes'));
+app.use('/api/transactions', require('./routes/transanctions.routes'));
 
 
 // Initialiser WebSocket

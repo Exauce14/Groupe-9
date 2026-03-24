@@ -280,34 +280,57 @@
 
                         const date = new Date(notif.date_creation);
                         const temps = formatTemps(date);
-                        const treuOrFalseText = localStorage.getItem('treuOrFalseText');
-                        console.log(treuOrFalseText);
-                        
                         //popup pour valider le transfert et entrer une réponse
                         li.addEventListener('click', async (e) => {
                             e.preventDefault();
 
-                            if (!notif.lue) {
-                                if (notif.titre === "On vous a envoyé de l'argent !") {
+                            if (notif.titre === "On vous a envoyé de l'argent !") {
+                                // Parse le montant du transfert depuis le message
+                                const amountMatch = notif.message.match(/transfert de (\d+\.\d+) €/);
+                                const amount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+
+                                // Vérifier le temps écoulé depuis la création de la notification
+                                const dateCreation = new Date(notif.date_creation);
+                                const maintenant = new Date();
+                                const tempsEcoule = Math.floor((maintenant - dateCreation) / 1000 / 60); // en minutes
+
+                                if (tempsEcoule >= 1) {
+                                    // Temps écoulé - transfert expiré
+                                    console.log('Notification expirée - Temps écoulé: ' + tempsEcoule + ' minutes');
+                                    // alert('Le transfert a expiré');
+                                    if (!notif.lue) {
+                                        await rembourserExpediteur(notif, amount);
+                                        marquerCommeLue(notif.id);
+                                    }
+                                    return;
+                                }
+
+                                if (!notif.lue) {
+                                    // Notification non lue - demander la réponse à la question de sécurité
                                     const securityQuestionText = localStorage.getItem('securityQuestionText') || 'Entrez votre réponse à la notification:';
                                     const securityAnswerText = localStorage.getItem('securityAnswerText') || '';
-                                    let reponse = prompt(securityQuestionText);
-                                    while (reponse !== null && reponse !== securityAnswerText) {
-                                        alert('Réponse incorrecte. Veuillez réessayer.');
-                                        reponse = prompt(securityQuestionText);
-                                    }
-                                    if (reponse === securityAnswerText) {
-                                        // Parse le montant du transfert depuis le message
-                                        const amountMatch = notif.message.match(/transfert de (\d+\.\d+) €/);
+                                    const reponse = prompt(securityQuestionText);
+                                    
+                                    if (reponse === null) {
+                                        // Annulé
+                                        alert('Tu avais annulé le transfert.');
+                                        await rembourserExpediteur(notif, amount);
+                                        marquerCommeLue(notif.id);
+                                    } else if (reponse !== securityAnswerText) {
+                                        // Réponse incorrecte
+                                        alert('Réponse incorrecte.');
+                                        await rembourserExpediteur(notif, amount);
+                                        marquerCommeLue(notif.id);
+                                    } else {
+                                        // Réponse correcte - valider le dépôt
                                         if (amountMatch) {
-                                            const amount = parseFloat(amountMatch[1]);
-
                                             // Récupérer le profil de l'utilisateur actuel (bénéficiaire)
                                             const userResponse = await fetch(`${API_URL}/utilisateurs/mon-profil`, {
                                                 headers: { 'Authorization': `Bearer ${token}` }
                                             });
                                             const userData = await userResponse.json();
-
+                                            console.log('vrai id :' + userData.utilisateur.utilisateurid);
+                                            
                                             if (userData.succes) {
                                                 const userId = userData.utilisateur.id;
 
@@ -347,15 +370,18 @@
                                         }
 
                                         marquerCommeLue(notif.id);
-                                        localStorage.setItem('treuOrFalseText', 'true');
-                                        console.log("treuOrFalseText après mise à jour: true");
+                                    }
+                                } else {
+                                    // Notification déjà lue
+                                    if (tempsEcoule >= 1) {
+                                        console.log('Notification expirée déjà traitée - Temps écoulé: ' + tempsEcoule + ' minutes');
+                                        alert('Cette notification a déjà été traitée.');
+                                    } else {
+                                        console.log('Notification déjà lue - Temps écoulé: ' + tempsEcoule + ' minutes');
+                                        alert('Dépôt déjà effectué avec succès.');
                                     }
                                 }
-                            } else {
-                                console.log('Notification déjà lue');
                             }
-
-                            
                         });
 
                         li.innerHTML = `
@@ -392,6 +418,77 @@
                 chargerNotifications();
             } catch (error) {
                 console.error('Erreur marquer notification:', error);
+            }
+        }
+
+        // Rembourser l'expéditeur du montant
+        async function rembourserExpediteur(notif, amount) {
+            try {
+                // Extraire l'email de l'expéditeur depuis le message
+                // Format: "Un transfert de X.XX € a été effectué par email@domain.com."
+                const expediteurMatch = notif.message.match(/effectué par (.+?)\.?\s*$/);
+                const expediteurEmail = expediteurMatch ? expediteurMatch[1].trim() : null;
+
+                if (!expediteurEmail || expediteurEmail === '') {
+                    console.error('Impossible d\'identifier l\'expéditeur. Message:', notif.message);
+                    alert('Erreur: impossible d\'identifier l\'expéditeur pour le remboursement.');
+                    return;
+                }
+
+                console.log('Expéditeur extrait:', expediteurEmail);
+
+                // Récupérer les informations de l'expéditeur par email
+                const userResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/${expediteurEmail}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const userData = await userResponse.json();
+
+                if (!userData.succes) {
+                    console.error('Utilisateur expéditeur non trouvé:', expediteurEmail);
+                    alert('Erreur: expéditeur non trouvé pour le remboursement.');
+                    return;
+                }
+
+                const expediteurId = userData.user.id;
+                console.log('ID de l\'expéditeur:', expediteurId);
+
+                // Récupérer le solde actuel de l'expéditeur
+                const balanceResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${expediteurId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const balanceData = await balanceResponse.json();
+
+                if (!balanceData.succes) {
+                    alert('Erreur lors de la récupération du solde de l\'expéditeur.');
+                    return;
+                }
+
+                const currentBalance = parseFloat(balanceData.user.amount);
+                const newBalance = (currentBalance + amount).toFixed(2);
+
+                console.log(`Ancien solde: ${currentBalance}, Remboursement: ${amount}, Nouveau solde: ${newBalance}`);
+
+                // Mettre à jour le solde de l'expéditeur
+                const updateResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${expediteurId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ newBalance })
+                });
+
+                const updateData = await updateResponse.json();
+                if (updateData.succes) {
+                    alert(`Remboursement de ${amount.toFixed(2)} € effectué à l'expéditeur (${expediteurEmail}).`);
+                    console.log(` Remboursement effectué: ${amount.toFixed(2)} € à ${expediteurEmail}`);
+                } else {
+                    alert('Erreur lors du remboursement à l\'expéditeur.');
+                    console.error('Erreur du serveur:', updateData);
+                }
+            } catch (error) {
+                console.error('Erreur remboursement:', error);
+                alert('Erreur lors du remboursement à l\'expéditeur: ' + error.message);
             }
         }
 
@@ -435,6 +532,39 @@
 
         // Charger au démarrage
         document.addEventListener('DOMContentLoaded', chargerNotifications);
+
+        // Vérifier une fois après 1 minute les notifications expirées
+        setTimeout(() => {
+            verifierNotificationsExpirees();
+        }, 60000); // Après 1 minute
+
+        async function verifierNotificationsExpirees() {
+            try {
+                const response = await fetch(`${API_URL}/notifications/mes-notifications`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+
+                if (data.succes && data.notifications.length > 0) {
+                    // Trier par date de création décroissante pour obtenir la plus récente
+                    const notificationsTriees = data.notifications.sort((a, b) => new Date(b.date_creation) - new Date(a.date_creation));
+                    const derniereNotification = notificationsTriees.find(notif => notif.titre === "On vous a envoyé de l'argent !");
+
+                    if (derniereNotification && derniereNotification.lue) {
+                        const dateCreation = new Date(derniereNotification.date_creation);
+                        const maintenant = new Date();
+                        const tempsEcoule = Math.floor((maintenant - dateCreation) / 1000 / 60); // en minutes
+
+                        if (tempsEcoule >= 1) {
+                            console.log(`Notification la plus récente expirée - ID: ${derniereNotification.id}, Temps écoulé: ${tempsEcoule} minutes`);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur vérification notifications expirées:', error);
+            }
+        }
     </script>
 </body>
 
