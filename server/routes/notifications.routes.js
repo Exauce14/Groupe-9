@@ -75,4 +75,26 @@ router.put('/marquer-toutes-lues', async (req, res, next) => {
   }
 });
 
+router.post('/creer/notif/trasfert', async (req, res, next) => {
+  try {
+    const {  titre, message, user_id, type } = req.body;
+
+    const notification = await notificationModel.creer({
+      titre,
+      message,
+      user_id,
+      type
+    });
+
+    res.json({
+      succes: true,
+      notification: notification
+    });
+  } catch (error) {
+    console.error('Erreur création notification:', error);
+    next(error);
+  }
+});
+
+
 module.exports = router;

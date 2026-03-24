@@ -1,12 +1,12 @@
 const { query } = require('../config/baseDeDonnees');
 
 // Créer une notification
-exports.creer = async ({ utilisateurId, type, titre, message, lien = null }) => {
+exports.creer = async ({ user_id, type, titre, message, lien = null }) => {
   const result = await query(
     `INSERT INTO notifications (user_id, type, title, message, link, read)
      VALUES ($1, $2, $3, $4, $5, false)
      RETURNING id`,
-    [utilisateurId, type, titre, message, lien]
+    [user_id, type, titre, message, lien]
   );
 
   return result.rows[0];

@@ -81,6 +81,7 @@ CREATE TABLE users (
 );
 
 -- Table des comptes bancaires
+
 CREATE TABLE accounts (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

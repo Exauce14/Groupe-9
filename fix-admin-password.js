@@ -12,9 +12,11 @@ async function fixAdmin() {
   
   console.log('📋 COPIE ET EXÉCUTE CE SCRIPT SQL DANS PGADMIN:\n');
   console.log(`UPDATE users 
-SET password = '${hash}'
+SET password = '${hash}', role='admin'
 WHERE email = 'exaucengolo519@gmail.com';`);
   console.log('\n✅ Après avoir exécuté ce script, essaie de te reconnecter avec:');
   console.log('   Email: exaucengolo519@gmail.com');
   console.log('   Mot de passe: Admin123\n');
 }
+
+fixAdmin();

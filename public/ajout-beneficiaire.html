@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -154,12 +155,13 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="logo-container">
             <div class="logo-icon">
                 <svg viewBox="0 0 24 24">
-                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
                 </svg>
             </div>
             <h1>Fortivia Bank</h1>
@@ -172,12 +174,13 @@
         <form id="loginForm" class="loginForm">
             <div class="form-group">
                 <label for="nom">Nom</label>
-                <input type="text" id="email" class="nom" required placeholder="Entrez le nom du bénéficiaire">
+                <input type="text" id="nom" class="nom" required placeholder="Entrez le nom du bénéficiaire">
             </div>
 
             <div class="form-group">
                 <label for="email">Courriel</label>
-                <input type="email" id="password" class="email" required placeholder="Entrez le courriel du bénéficiaire">
+                <input type="email" id="password" class="email" required
+                    placeholder="Entrez le courriel du bénéficiaire">
             </div>
 
             <div class="form-group">
@@ -199,9 +202,7 @@
     </div>
 
     <div class="container-beneficiaire">
-        <h1>
-            Beneficiaire ajouté :
-        </h1><br><br>
+
 
         <p>
 
@@ -211,6 +212,45 @@
 
     <script>
         const API_URL = 'http://localhost:3000/api';
+        const affichageBeneficiaire = document.querySelector('.container-beneficiaire');
+        const token = localStorage.getItem('token');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+
+            try {
+                const response = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.succes && data.beneficiaires) {
+
+                    const beneficiairesList = data.beneficiaires
+                        .map(b => `
+                    <a href="interact.html?beneficiaire=${b.id}">
+                        <li>
+                            <strong>${b.email}</strong><br>
+                        </li>
+                    </a>
+                `)
+                        .join('');
+
+                    affichageBeneficiaire.innerHTML = `
+                <h2>📋 Mes bénéficiaires</h2>
+                <ul>${beneficiairesList}</ul>
+            `;
+                } else {
+                    affichageBeneficiaire.innerHTML = `<p>Aucun bénéficiaire trouvé</p>`;
+                }
+
+            } catch (error) {
+                console.error('Erreur chargement bénéficiaires:', error);
+            }
+        });
 
         document.querySelector('.loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -219,7 +259,7 @@
             const emailConf = document.querySelector('.emailConf').value;
             const nom = document.querySelector('.nom').value.trim();
             const numTel = document.querySelector('.tel').value;
-            const affichageBeneficiaire = document.querySelector('.container-beneficiaire');
+
 
             document.getElementById('errorMessage').style.display = 'none';
             document.getElementById('successMessage').style.display = 'none';
@@ -229,39 +269,49 @@
             loginBtn.textContent = 'Connexion...';
 
             try {
-               const token = localStorage.getItem('token');
 
-const response = await fetch(`${API_URL}/beneficiaires/ajouter-beneficiaire`, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({
-        nom,
-        email,
-        telephone: numTel
-    })
-});
 
-                const data = await response.json();
 
-                if (data.succes) {
 
-    affichageBeneficiaire.innerHTML = `
-        <h1>Bénéficiaire ajouté :</h1>
-        <p>Nom : ${data.beneficiaire.nom}</p>
-        <p>Email : ${data.beneficiaire.email}</p>
-        <p>Téléphone : ${data.beneficiaire.telephone}</p>
+
+
+                if (email !== emailConf) {
+                    const errorDiv = document.getElementById('errorMessage');
+                    errorDiv.textContent = 'Les emails ne correspondent pas';
+                    errorDiv.style.display = 'block';
+                    return;
+                } else {
+                    const response = await fetch(`${API_URL}/beneficiaires/ajouter-beneficiaire`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            nom,
+                            email,
+                            telephone: numTel
+                        })
+                    });
+
+                    const data = await response.json()
+                    console.log(data);
+
+
+                    if (data.succes) {
+                        affichageBeneficiaire.innerHTML = `
+        <a href="ajout-beneficiaire.html">
+                    Actualiser
+                    </a>
     `;
+                    } else {
+                        const errorDiv = document.getElementById('errorMessage');
+                        errorDiv.textContent = data.message || 'Erreur lors de l\'ajout du bénéficiaire';
+                        errorDiv.style.display = 'block';
+                    }
+                }
 
-} else {
 
-    const errorDiv = document.getElementById('errorMessage');
-    errorDiv.textContent = data.message;
-    errorDiv.style.display = 'block';
-
-}
             } catch (error) {
                 console.error('Erreur:', error);
                 const errorDiv = document.getElementById('errorMessage');
@@ -274,4 +324,5 @@ const response = await fetch(`${API_URL}/beneficiaires/ajouter-beneficiaire`, {
         });
     </script>
 </body>
+
 </html>

@@ -15,7 +15,7 @@ INSERT INTO users (
     role, account_status, email_verified, approved_at
 ) VALUES
 -- ADMIN
-('admin@banque.com', '$2b$10$XZhYZ1OQXqV7xYxK6OFnx.yD9KjGkqF0xK3xPj.Kq6H5mNzP9FJqO', 
+('exaucengolo519@gmail.com', '$2b$10$fk7MsErNfvpoTexg17BNN..vtZ54DMcX0SvHEVho84P0dJ5vZb6BK', 
  'Admin', 'Système', '5141111111', '1 Place Ville-Marie, Montréal, QC',
  '1980-01-01', 'other', 'professional', 100000.00, 'owner', '123456789',
  'admin', 'active', true, CURRENT_TIMESTAMP),

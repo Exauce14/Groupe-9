@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>depot</title>
+    <meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Dépôt en Espèces - Fortivia Bank</title>
+
+<style>
+
+    * {
+
+        margin: 0;
+
+        padding: 0;
+
+        box-sizing: border-box;
+
+    }
+
+    body {
+
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+        background: white;
+
+        min-height: 100vh;
+
+        display: flex;
+
+        justify-content: center;
+
+        align-items: center;
+
+        padding: 20px;
+
+    }
+
+    .container {
+
+        background: white;
+
+        padding: 48px;
+
+        border-radius: 20px;
+
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+
+        width: 100%;
+
+        max-width: 450px;
+
+    }
+
+    .logo-container {
+
+        text-align: center;
+
+        margin-bottom: 32px;
+
+    }
+
+    .logo-icon {
+
+        width: 64px;
+
+        height: 64px;
+
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+        border-radius: 50%;
+
+        display: inline-flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        margin-bottom: 16px;
+
+    }
+
+    .logo-icon svg {
+
+        width: 32px;
+
+        height: 32px;
+
+        fill: white;
+
+    }
+
+    h1 {
+
+        color: #1f2937;
+
+        font-size: 28px;
+
+        text-align: center;
+
+        margin-bottom: 8px;
+
+    }
+
+    .subtitle {
+
+        color: #6b7280;
+
+        text-align: center;
+
+        margin-bottom: 32px;
+
+        font-size: 15px;
+
+    }
+
+    .form-group {
+
+        margin-bottom: 24px;
+
+    }
+
+    label {
+
+        display: block;
+
+        margin-bottom: 8px;
+
+        font-weight: 600;
+
+        color: #374151;
+
+        font-size: 14px;
+
+    }
+
+    input,
+
+    select {
+
+        width: 100%;
+
+        padding: 14px 16px;
+
+        border: 2px solid #e5e7eb;
+
+        border-radius: 10px;
+
+        font-size: 15px;
+
+        transition: all 0.2s;
+
+    }
+
+    input:focus,
+
+    select:focus {
+
+        outline: none;
+
+        border-color: #667eea;
+
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+
+    }
+
+    .btn {
+
+        width: 100%;
+
+        padding: 14px;
+
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+        color: white;
+
+        border: none;
+
+        border-radius: 10px;
+
+        font-size: 16px;
+
+        font-weight: 600;
+
+        cursor: pointer;
+
+        transition: all 0.3s;
+
+    }
+
+    .btn:hover {
+
+        transform: translateY(-2px);
+
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+
+    }
+
+    .btn:disabled {
+
+        opacity: 0.6;
+
+        cursor: not-allowed;
+
+        transform: none;
+
+    }
+
+    .error-message {
+
+        background: #fee2e2;
+
+        color: #991b1b;
+
+        padding: 12px 16px;
+
+        border-radius: 8px;
+
+        margin-bottom: 20px;
+
+        font-size: 14px;
+
+        display: none;
+
+    }
+
+    .success-message {
+
+        background: #d1fae5;
+
+        color: #065f46;
+
+        padding: 12px 16px;
+
+        border-radius: 8px;
+
+        margin-bottom: 20px;
+
+        font-size: 14px;
+
+        display: none;
+
+    }
+
+    .links {
+
+        text-align: center;
+
+        margin-top: 24px;
+
+    }
+
+    .links a {
+
+        color: #667eea;
+
+        text-decoration: none;
+
+        font-size: 14px;
+
+        font-weight: 500;
+
+    }
+
+    .links a:hover {
+
+        text-decoration: underline;
+
+    }
+
+</style>
+</head>
+<body>
+    <div class="container">
+
+    <div class="logo-container">
+
+        <div class="logo-icon">
+
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+
+            </svg>
+
+        </div>
+
+        <h1>Dépôt en Espèces</h1>
+
+        <p class="subtitle">Déposez de l'argent liquide sur votre compte</p>
+
+    </div>
+
+    <div id="error-message" class="error-message"></div>
+
+    <div id="success-message" class="success-message"></div>
+
+    <form id="deposit-form">
+
+        <div class="form-group">
+
+            <label for="email">Email du compte</label>
+
+            <input type="email" id="email" name="email" placeholder="email@exemple.com" required>
+
+        </div>
+
+        <div class="form-group">
+
+            <label for="amount">Montant (€)</label>
+
+            <input type="number" id="amount" name="amount" placeholder="0.00" min="0.01" step="0.01" required>
+
+        </div>
+
+        <div class="form-group">
+
+            <label for="description">Description (optionnel)</label>
+
+            <input type="text" id="description" name="description" placeholder="Motif du dépôt">
+
+        </div>
+
+        <button type="submit" class="btn">Déposer</button>
+
+    </form>
+
+    <div class="links">
+
+        <a href="dashboard-admin.html">Retour</a>
+
+    </div>
+
+</div>
+
+<script>
+
+    const API_URL = 'http://localhost:3000/api';
+
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+
+        window.location.href = 'index.html';
+
+    }
+
+    document.getElementById('deposit-form').addEventListener('submit', async function (e) {
+
+        e.preventDefault();
+
+        const email = document.getElementById('email').value;
+
+        const amount = parseFloat(document.getElementById('amount').value);
+
+        const description = document.getElementById('description').value;
+
+        if (!email) {
+            document.getElementById('error-message').textContent = 'Veuillez saisir l\'email du compte.';
+            document.getElementById('error-message').style.display = 'block';
+            document.getElementById('success-message').style.display = 'none';
+            return;
+        }
+
+        if (amount <= 0) {
+
+            document.getElementById('error-message').textContent = 'Veuillez entrer un montant valide.';
+
+            document.getElementById('error-message').style.display = 'block';
+
+            document.getElementById('success-message').style.display = 'none';
+
+            return;
+
+        }
+
+        try {
+
+            // Récupérer l'utilisateur via son email
+
+            const userResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/${email}`, {
+
+                headers: { 'Authorization': `Bearer ${token}` }
+
+            });
+
+            const userData = await userResponse.json();
+            
+
+            if (!userData.succes) {
+
+                throw new Error('Utilisateur non trouvé avec cet email.');
+
+            }
+            
+            
+            const userId = userData.user.id;
+
+            // Récupérer le solde actuel
+
+            const balanceResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${userId}`, {
+
+                headers: { 'Authorization': `Bearer ${token}` }
+
+            });
+
+            const balanceData = await balanceResponse.json();
+
+            if (!balanceData.succes) {
+
+                throw new Error('Erreur lors de la récupération du solde.');
+
+            }
+
+            const newBalance = (parseFloat(balanceData.user.amount) + amount).toFixed(2);
+
+            // Mettre à jour le solde
+
+            const updateResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${userId}`, {
+
+                method: 'PUT',
+
+                headers: {
+
+                    'Content-Type': 'application/json',
+
+                    'Authorization': `Bearer ${token}`
+
+                },
+
+                body: JSON.stringify({ newBalance })
+
+            });
+
+            const updateData = await updateResponse.json();
+
+            if (updateData.succes) {
+
+                // Créer une notification pour le bénéficiaire
+                const notifResponse = await fetch(`${API_URL}/notifications/creer/notif/trasfert`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        type: 'transaction',
+                        titre: 'Dépôt en espèces crédité',
+                        message: `Un dépôt de ${amount.toFixed(2)} € a été effectué sur votre compte (${email}).`
+                    })
+                });
+
+                if (!notifResponse.ok) {
+                    console.error('Erreur HTTP notification:', notifResponse.status);
+                } else {
+                    const notifData = await notifResponse.json();
+                    if (notifData.succes) {
+                        console.log('Notification créée pour le bénéficiaire:', notifData.notification);
+                    } else {
+                        console.error('Erreur création notification:', notifData.message);
+                    }
+                }
+
+                document.getElementById('success-message').textContent = `Dépôt de ${amount.toFixed(2)} € effectué avec succès !`;
+
+                document.getElementById('success-message').style.display = 'block';
+
+                document.getElementById('error-message').style.display = 'none';
+
+                // Réinitialiser le formulaire
+
+                document.getElementById('email').value = '';
+
+                document.getElementById('amount').value = '';
+
+                document.getElementById('description').value = '';
+
+            } else {
+
+                throw new Error('Erreur lors de la mise à jour du solde.');
+
+            }
+
+        } catch (error) {
+
+            console.error('Erreur:', error);
+
+            document.getElementById('error-message').textContent = error.message || 'Une erreur est survenue lors du dépôt.';
+
+            document.getElementById('error-message').style.display = 'block';
+
+            document.getElementById('success-message').style.display = 'none';
+
+        }
+
+    });
+
+</script>
+</body>
+</html>

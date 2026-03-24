@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -199,13 +200,14 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Navigation -->
     <nav class="navbar">
         <div class="navbar-brand">
             <div class="logo-icon">
                 <svg viewBox="0 0 24 24">
-                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
                 </svg>
             </div>
             <span>Fortivia Bank</span>
@@ -259,6 +261,8 @@
                 const emptyState = document.getElementById('emptyState');
                 const btnMarquer = document.getElementById('btnMarquerLues');
 
+
+
                 if (data.succes && data.notifications.length > 0) {
                     liste.innerHTML = '';
                     emptyState.style.display = 'none';
@@ -276,6 +280,83 @@
 
                         const date = new Date(notif.date_creation);
                         const temps = formatTemps(date);
+                        const treuOrFalseText = localStorage.getItem('treuOrFalseText');
+                        console.log(treuOrFalseText);
+                        
+                        //popup pour valider le transfert et entrer une réponse
+                        li.addEventListener('click', async (e) => {
+                            e.preventDefault();
+
+                            if (!notif.lue) {
+                                if (notif.titre === "On vous a envoyé de l'argent !") {
+                                    const securityQuestionText = localStorage.getItem('securityQuestionText') || 'Entrez votre réponse à la notification:';
+                                    const securityAnswerText = localStorage.getItem('securityAnswerText') || '';
+                                    let reponse = prompt(securityQuestionText);
+                                    while (reponse !== null && reponse !== securityAnswerText) {
+                                        alert('Réponse incorrecte. Veuillez réessayer.');
+                                        reponse = prompt(securityQuestionText);
+                                    }
+                                    if (reponse === securityAnswerText) {
+                                        // Parse le montant du transfert depuis le message
+                                        const amountMatch = notif.message.match(/transfert de (\d+\.\d+) €/);
+                                        if (amountMatch) {
+                                            const amount = parseFloat(amountMatch[1]);
+
+                                            // Récupérer le profil de l'utilisateur actuel (bénéficiaire)
+                                            const userResponse = await fetch(`${API_URL}/utilisateurs/mon-profil`, {
+                                                headers: { 'Authorization': `Bearer ${token}` }
+                                            });
+                                            const userData = await userResponse.json();
+
+                                            if (userData.succes) {
+                                                const userId = userData.utilisateur.id;
+
+                                                // Récupérer le solde actuel du bénéficiaire
+                                                const balanceResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${userId}`, {
+                                                    headers: { 'Authorization': `Bearer ${token}` }
+                                                });
+                                                const balanceData = await balanceResponse.json();
+
+                                                if (balanceData.succes) {
+                                                    const newBalance = (parseFloat(balanceData.user.amount) + amount).toFixed(2);
+
+                                                    // Mettre à jour le solde du bénéficiaire
+                                                    const updateResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${userId}`, {
+                                                        method: 'PUT',
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                            'Authorization': `Bearer ${token}`
+                                                        },
+                                                        body: JSON.stringify({ newBalance })
+                                                    });
+
+                                                    const updateData = await updateResponse.json();
+                                                    if (updateData.succes) {
+                                                        alert('Dépôt effectué avec succès! Solde mis à jour.');
+                                                    } else {
+                                                        alert('Erreur lors de la mise à jour du solde.');
+                                                    }
+                                                } else {
+                                                    alert('Erreur lors de la récupération du solde.');
+                                                }
+                                            } else {
+                                                alert('Erreur lors de la récupération du profil utilisateur.');
+                                            }
+                                        } else {
+                                            alert('Dépôt effectué avec succès!');
+                                        }
+
+                                        marquerCommeLue(notif.id);
+                                        localStorage.setItem('treuOrFalseText', 'true');
+                                        console.log("treuOrFalseText après mise à jour: true");
+                                    }
+                                }
+                            } else {
+                                console.log('Notification déjà lue');
+                            }
+
+                            
+                        });
 
                         li.innerHTML = `
                             <div class="notification-header">
@@ -337,7 +418,7 @@
             if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`;
             if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)} h`;
             if (diff < 604800) return `Il y a ${Math.floor(diff / 86400)} j`;
-            
+
             return date.toLocaleDateString('fr-CA', {
                 day: 'numeric',
                 month: 'short',
@@ -356,4 +437,5 @@
         document.addEventListener('DOMContentLoaded', chargerNotifications);
     </script>
 </body>
+
 </html>
