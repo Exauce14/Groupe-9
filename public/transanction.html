@@ -364,9 +364,10 @@
                     <label for="filterType">Type de transaction:</label>
                     <select id="filterType" onchange="filtrerTransactions()">
                         <option value="">Tous les types</option>
-                        <option value="depot">Dépôt</option>
-                        <option value="retrait">Retrait</option>
-                        <option value="transfert">Transfert</option>
+                        <option value="deposit">Dépôt</option>
+                        <option value="withdrawal">Retrait</option>
+                        <option value="transfer_in">Transfert entrant</option>
+                        <option value="transfer_out">Transfert sortant</option>
                     </select>
                 </div>
                 <button class="btn-reset" onclick="reinitialiserFiltres()">Réinitialiser</button>
@@ -416,38 +417,40 @@
         // Charger les transactions
         async function chargerTransactions() {
             try {
-                // récupérer les données de l'utilisateur connecté
-                const senderResponse = await fetch(`${API_URL}/utilisateurs/mon-profil`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                const senderData = await senderResponse.json();
-                console.log('utilisateur connecté :', senderData);
-                
-                //  récupérer compte expéditeur
-                const senderAccountResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${senderData.utilisateur.id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const senderAccountData = await senderAccountResponse.json();
-                console.log('récupérer compte expéditeur :', senderAccountData);
-                
-
-                const response = await fetch(`${API_URL}/transactions/compte/${senderAccountData.user.user_id}`, {
+                // 1. récupérer les comptes
+                const comptesResponse = await fetch(`${API_URL}/comptes/mes-comptes`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                const data = await response.json();
-                console.log('transactions récupérées :', data);
+                const comptesData = await comptesResponse.json();
 
-                if (data.succes && data.transactions) {
-                    toutesTransactions = data.transactions;
-                    transactionsFiltrées = [...toutesTransactions];
-                    afficherStats();
-                    afficherTransactions();
-                } else {
+                if (!comptesData.succes) {
                     afficherEtatVide();
+                    return;
                 }
+
+                let toutes = [];
+
+                // 2. récupérer les transactions de chaque compte
+                for (const compte of comptesData.comptes) {
+                    const res = await fetch(`${API_URL}/transactions/compte/${compte.id}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    const data = await res.json();
+
+                    if (data.succes) {
+                        toutes = [...toutes, ...data.transactions];
+                    }
+                }
+
+                // 3. stocker toutes les transactions
+                toutesTransactions = toutes;
+                transactionsFiltrées = [...toutesTransactions];
+
+                afficherStats();
+                afficherTransactions();
+
             } catch (error) {
                 console.error('Erreur chargement transactions:', error);
                 afficherEtatVide();
@@ -459,15 +462,15 @@
             const statsContainer = document.getElementById('statsCards');
 
             const totalDepots = toutesTransactions
-                .filter(t => t.type_transaction?.toLowerCase() === 'depot')
+                .filter(t => t.type_transaction === 'deposit')
                 .reduce((sum, t) => sum + parseFloat(t.montant || 0), 0);
 
             const totalRetraits = toutesTransactions
-                .filter(t => t.type_transaction?.toLowerCase() === 'retrait')
+                .filter(t => t.type_transaction === 'withdrawal')
                 .reduce((sum, t) => sum + parseFloat(t.montant || 0), 0);
 
             const totalTransferts = toutesTransactions
-                .filter(t => t.type_transaction?.toLowerCase() === 'transfert')
+                .filter(t => ['transfer_in', 'transfer_out'].includes(t.type_transaction))
                 .reduce((sum, t) => sum + parseFloat(t.montant || 0), 0);
 
             statsContainer.innerHTML = `
@@ -540,8 +543,8 @@
                     'transfert': '💸',
                     'autre': '📋'
                 };
-                const montantClass = ['depot', 'transfert_entrant'].includes(type) ? 'positif' : 'negatif';
-                const signe = ['depot', 'transfert_entrant'].includes(type) ? '+' : '';
+                const montantClass = ['deposit', 'transfer_in'].includes(type) ? 'positif' : 'negatif';
+                const signe = ['deposit', 'transfer_in'].includes(type) ? '+' : '-';
                 const date = new Date(t.cree_le);
                 const dateFormatee = date.toLocaleDateString('fr-FR', {
                     day: '2-digit',

@@ -44,7 +44,7 @@ async function obtenirUserParUserId(userId) {
     `SELECT id, user_id, account_number, account_type, balance AS amount FROM accounts WHERE user_id = $1`,
     [userId]
   );
-  return res.rows[0] || null;
+  return res.rows;
 }
 
 async function obtenirAllUsers() {
@@ -60,9 +60,22 @@ async function updateParUserId(userId, newBalance) {
     `UPDATE accounts SET balance = $1 WHERE user_id = $2 RETURNING id, user_id, account_number, account_type, balance AS amount`,
     [newBalance, userId]
   );
+    console.log("UPDATE balance pour user_id:", userId);
   return res.rows[0] || null;
 
-  console.log("UPDATE balance pour user_id:", userId);
+
+}
+
+// Nouvelle fonction pour mettre à jour le solde d'un compte par userId et accountId
+async function updateCompteParUserIdEtIdCompte(userId, accountId, newBalance) {
+  const res = await query(
+    `UPDATE accounts SET balance = $1 WHERE user_id = $2 AND id = $3 RETURNING id, user_id, account_number, account_type, balance AS amount`,
+    [newBalance, userId, accountId]
+  );
+    console.log("UPDATE balance pour user_id:", userId + " et account_id: " + accountId);
+  return res.rows[0] || null;
+
+
 }
 
 module.exports = {
@@ -72,5 +85,6 @@ module.exports = {
   trouverUsersParEmail,
   obtenirUserParUserId,
   updateParUserId,
-  obtenirAllUsers
+  obtenirAllUsers,
+  updateCompteParUserIdEtIdCompte
 };

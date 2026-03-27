@@ -77,14 +77,25 @@ router.put('/marquer-toutes-lues', async (req, res, next) => {
 
 router.post('/creer/notif/trasfert', async (req, res, next) => {
   try {
-    const {  titre, message, user_id, type } = req.body;
+    const {  titre, message, user_id, type, security_question, security_answer } = req.body;
 
+       // 1. créer la notification
     const notification = await notificationModel.creer({
       titre,
       message,
       user_id,
       type
     });
+
+        // 2. ajouter la réponse de sécurité
+    if (security_question && security_answer) {
+      await notificationModel.creerAvecReponseSecurite({
+        notificationId: notification.id,
+        security_question,
+        security_answer
+      });
+    }
+
 
     res.json({
       succes: true,
@@ -96,5 +107,19 @@ router.post('/creer/notif/trasfert', async (req, res, next) => {
   }
 });
 
+router.post('/verifier-reponse', async (req, res, next) => {
+  try {
+    const { notification_id, reponse } = req.body;
+
+    const resultat = await notificationModel.verifierReponse(notification_id, reponse);
+
+    res.json({
+      succes: resultat
+    });
+  } catch (error) {
+    console.error('Erreur vérification réponse:', error);
+    next(error);
+  }
+});
 
 module.exports = router;

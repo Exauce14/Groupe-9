@@ -153,6 +153,42 @@
         .links a:hover {
             text-decoration: underline;
         }
+
+        /* Styles pour la section des bénéficiaires */
+        .container-beneficiaire ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .container-beneficiaire li {
+            background: #f9fafb;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .container-beneficiaire li:hover {
+            background: #f3f4f6;
+            transform: translateY(-2px);
+            border-color: #667eea;
+        }
+
+         .container-beneficiaire  {
+            margin-left: 10rem;
+        }
+
+        .container-beneficiaire a {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .container-beneficiaire strong {
+            color: #1f2937;
+            font-size: 15px;
+        }
     </style>
 </head>
 
@@ -201,13 +237,21 @@
         </div>
     </div>
 
-    <div class="container-beneficiaire">
+    <div class="container container-beneficiaire">
+        <div class="logo-container">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 
+                10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 
+                1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                </svg>
+            </div>
 
+        </div>
 
-        <p>
+        <div id="affichageBeneficiaire">
 
-        </p>
-
+        </div>
     </div>
 
     <script>
@@ -233,14 +277,15 @@
                         .map(b => `
                     <a href="interact.html?beneficiaire=${b.id}">
                         <li>
-                            <strong>${b.email}</strong><br>
+                            <strong>👤 ${b.email}</strong>
                         </li>
                     </a>
                 `)
                         .join('');
 
                     affichageBeneficiaire.innerHTML = `
-                <h2>📋 Mes bénéficiaires</h2>
+                <h1>Mes bénéficiaires</h1>
+        <p class="subtitle">Choisissez un destinataire pour transférer de l'argent</p>
                 <ul>${beneficiairesList}</ul>
             `;
                 } else {

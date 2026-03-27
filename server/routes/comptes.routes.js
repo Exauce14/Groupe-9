@@ -10,6 +10,7 @@ router.use(authMiddleware.verifierToken);
 router.get('/mes-comptes', comptesControleur.mesComptes);
 router.get('/resume-soldes', comptesControleur.resumeSoldes);
 router.get('/:compteId/transactions', comptesControleur.transactionsCompte);
+router.post('/transfert-interne', comptesControleur.transfertInterne);
 // Obtenir les transactions d'un compte
 router.get('/:compteId/transactions', async (req, res, next) => {
   try {

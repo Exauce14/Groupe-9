@@ -9,16 +9,16 @@ router.use(authMiddleware.verifierToken);
 // Ajouter une transaction 
 router.post('/creer/notif/transaction', async (req, res, next) => {
   try {
-    const { accountId,type, amount, balanceAfter, description } = req.body;
+    const { account_id,type, amount, balanceAfter, description } = req.body;
    const transanction = await transanctionModel.creer({
-  compteId: accountId,
+  compteId: account_id,
   typeTransaction: type,
   montant: amount,
   soldeApres: balanceAfter,
   description: description
 });
 
-   
+   console.log("Body reçu:", req.body);
     res.json({
       succes: true,
       transanction: transanction

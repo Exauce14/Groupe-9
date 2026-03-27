@@ -45,12 +45,9 @@ exports.creerDemande = async (req, res, next) => {
         account_type,
         card_type,
         requested_limit,
-        requested_amount,
-        duration_months,
-        property_value,
         justification,
         status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')
+      ) VALUES ($1, $2, $3, $4, $5, $6,'pending')
       RETURNING id`,
       [
         utilisateurId,
@@ -58,9 +55,6 @@ exports.creerDemande = async (req, res, next) => {
         typeCompte || null,
         typeCarte || null,
         limiteDemandee || null,
-        montantDemande || montantInitial || null,
-        dureeMois || null,
-        valeurPropriete || null,
         justification
       ]
     );
@@ -71,7 +65,7 @@ exports.creerDemande = async (req, res, next) => {
 
     // Créer notification pour l'utilisateur
     await notificationModel.creer({
-      utilisateurId: utilisateurId,
+      user_id: utilisateurId,
       type: 'request_submitted',
       titre: 'Demande soumise',
       message: `Votre demande de ${typeDemande} a été soumise et est en cours d'examen.`,

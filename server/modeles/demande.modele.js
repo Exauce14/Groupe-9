@@ -56,13 +56,13 @@ exports.trouverEnAttente = async () => {
       u.email,
       u.status AS statut_utilisateur,
       u.annual_income AS revenu_annuel,
-      r.request_type AS type_requete,
+      r.request_type AS type_demande,
       r.account_type AS type_compte,
       r.card_type AS type_carte,
       r.requested_limit AS limite_demandee,
       r.justification,
       r.status AS statut,
-      r.created_at AS cree_le
+      r.created_at AS date_demande
     FROM requests r
     JOIN users u ON r.user_id = u.id
     WHERE r.status = 'pending'

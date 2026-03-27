@@ -136,6 +136,11 @@ CREATE TABLE requests (
 );
 
 -- Table des cartes bancaires (NOUVELLE)
+ALTER TABLE cards 
+ADD COLUMN available_credit NUMERIC(15,2) DEFAULT 0;
+UPDATE cards 
+SET available_credit = credit_limit 
+WHERE credit_limit IS NOT NULL;
 CREATE TABLE cards (
     id SERIAL PRIMARY KEY,
     account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
@@ -161,6 +166,21 @@ CREATE TABLE notifications (
     link VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Table des réponses de vérification 
+CREATE TABLE verification_reponses (
+    id SERIAL PRIMARY KEY,
+    notification_id INTEGER NOT NULL,
+    question TEXT NOT NULL,
+    reponse_hash TEXT NOT NULL,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_notification
+        FOREIGN KEY (notification_id)
+        REFERENCES notifications(id)
+        ON DELETE CASCADE
+);
+
 CREATE TABLE beneficiaires (
     id SERIAL PRIMARY KEY,
     utilisateur_id INTEGER REFERENCES users(id) ON DELETE CASCADE,

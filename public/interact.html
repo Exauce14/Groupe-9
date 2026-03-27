@@ -181,8 +181,15 @@
             </div>
 
             <div class="form-group">
-                <label for="amount">Montant (€)</label>
+                <label for="amount">Montant ($)</label>
                 <input type="number" id="amount" name="amount" placeholder="0.00" min="0.01" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="senderAccount">Compte à débiter</label>
+                <select id="senderAccount" required>
+
+
+                </select>
             </div>
 
             <div class="form-group">
@@ -218,11 +225,16 @@
     <script>
         const API_URL = 'http://localhost:3000/api';
         const token = localStorage.getItem('token');
+
         const recipient = document.getElementById('recipient');
         const amount = document.getElementById('amount');
+        const senderAccountSelect = document.getElementById('senderAccount');
         const description = document.getElementById('description');
         const securityQuestion = document.getElementById('security-question');
         const securityAnswer = document.getElementById('security-answer');
+        const successMessage = document.getElementById('success-message');
+        const errorMessage = document.getElementById('error-message');
+
 
         // Sauvegarder la valeur initiale et ajouter écouteur de changement
         if (securityQuestion) {
@@ -243,6 +255,45 @@
 
 
 
+        function formatMontant(montant) {
+            return parseFloat(montant).toFixed(2) + ' $';
+        }
+        // Charger les comptes dans le select
+        // Charger les comptes dans le select
+        async function remplirSelectComptes() {
+            const res = await fetch(`${API_URL}/comptes/mes-comptes`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+
+            const select = document.getElementById('senderAccount');
+
+            // 🔹 Toujours vider avant de remplir (évite les doublons)
+            select.innerHTML = '';
+
+            // 🔹 1ère option (placeholder)
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Choisissez un compte';
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            select.appendChild(defaultOption);
+
+            if (data.succes) {
+                // 🔹 Filtrer le compte checking
+                const checkingAccount = data.comptes.find(c => c.type_compte === 'checking');
+
+                if (checkingAccount) {
+                    const opt = document.createElement('option');
+                    opt.value = checkingAccount.id;
+                    opt.textContent = `${checkingAccount.type_compte} - ${formatMontant(checkingAccount.solde)}`;
+                    select.appendChild(opt);
+                } else {
+                    console.error("Aucun compte checking trouvé !");
+                }
+            }
+        }
+
 
         const getBeneficiaireIdFromURL = () => {
             const params = new URLSearchParams(window.location.search);
@@ -252,7 +303,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const beneficiaireId = getBeneficiaireIdFromURL();
 
-
+            await remplirSelectComptes();
             console.log("ID:", beneficiaireId);
 
             try {
@@ -285,6 +336,14 @@
 
         document.getElementById('transfer-form').addEventListener('submit', async function (e) {
             e.preventDefault();
+            // Vérifie que l'utilisateur a sélectionné un compte
+            if (!senderAccountSelect.value) {
+                errorMessage.textContent = 'Veuillez sélectionner un compte à débiter.';
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+                return;
+            }
+
             const response = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/${recipient.value}`, {
                 method: 'GET',
                 headers: {
@@ -310,7 +369,7 @@
                         'Authorization': `Bearer ${token}`
                     }
                 });
-
+                console.log('senderResponse:', senderResponse);
                 const senderData = await senderResponse.json();
                 if (!senderData.succes || !senderData.utilisateur) {
                     throw new Error('Impossible de récupérer le profil expéditeur');
@@ -320,15 +379,18 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const senderAccount = await senderAccountResponse.json();
+                const compteCheque = senderAccount.user.find(acc => acc.account_type === 'checking');
 
-                if (!senderAccount.succes || !senderAccount.user) {
-                    throw new Error('Impossible de récupérer le compte expéditeur');
+
+                if (!senderAccount.succes || !Array.isArray(senderAccount.user) || senderAccount.user.length === 0) {
+                    throw new Error('Aucun compte trouvé pour cet utilisateur');
                 }
 
-                const solde = parseFloat(datas.user.amount);
+                const compteBeneficiaire = datas.user[0];
+                const solde = parseFloat(compteBeneficiaire.amount);
                 const montant = parseFloat(amount.value);
-                const slodeSender = parseFloat(senderAccount.user.amount);
-                console.log("solde sender : " + slodeSender);
+                const slodeSender = parseFloat(compteCheque.amount);
+                console.log("solde sender (checking):", slodeSender);
 
                 // Simulation de validation et traitement
                 if (recipient && montant > 0 && montant <= slodeSender && securityQuestion && securityAnswer) {
@@ -339,6 +401,9 @@
                     try {
 
                         if (data.succes) {
+                            if (!datas.succes || !Array.isArray(datas.user) || datas.user.length === 0) {
+                                throw new Error("Le bénéficiaire n'a pas de compte");
+                            }
 
                             if (datas.succes) {
                                 // Créer une notification pour le bénéficiaire
@@ -349,7 +414,7 @@
                                 });
 
                                 const senderData = await senderResponse.json();
-                                console.log("sender data : " + senderData.utilisateur.amount);
+                                console.log("sender data : ", senderData.utilisateur.amount);
 
                                 const notifResponse = await fetch(`${API_URL}/notifications/creer/notif/trasfert`, {
                                     method: 'POST',
@@ -359,9 +424,11 @@
                                     },
                                     body: JSON.stringify({
                                         user_id: data.user.id,
-                                        type: 'transaction',
+                                        type: 'transfer_in',
                                         titre: 'On vous a envoyé de l\'argent !',
                                         message: `Un transfert de ${montant.toFixed(2)} € a été effectué par ${senderData.utilisateur.email}.`,
+                                        security_question: document.getElementById('security-question').value,
+                                        security_answer: document.getElementById('security-answer').value
                                     })
                                 });
                                 // vérifier avant de parser
@@ -388,10 +455,10 @@
                                     throw new Error('Impossible de récupérer le compte expéditeur (schema attendu non trouvé)');
                                 }
 
-                                const senderOldBalance = parseFloat(senderAccount.user.amount);
+                                const senderOldBalance = parseFloat(compteCheque.amount);
                                 const senderNewBalance = (senderOldBalance - montant).toFixed(2);
 
-                                const updateResponseSender = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${senderData.utilisateur.id}`, {
+                                const updateResponseSender = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${senderData.utilisateur.id}/${senderAccountSelect.value}`, {
                                     method: 'PUT',
                                     headers: {
                                         'Content-Type': 'application/json',
@@ -403,28 +470,52 @@
                                 });
 
                                 const updateDataSender = await updateResponseSender.json();
+                                console.log("Update dataSender", updateResponseSender);
 
                                 if (updateDataSender.succes) {
+
                                     console.log("Solde mis à jour pour l'expéditeur:", senderNewBalance);
                                 } else {
                                     console.error("Erreur lors de la mise à jour du solde de l'expéditeur:", updateDataSender.message || updateDataSender);
                                 }
+                                if (!senderAccountSelect.value) {
+                                    console.error("Aucun compte sélectionné !");
+                                    errorMessage.textContent = 'Veuillez sélectionner un compte à débiter.';
+                                    errorMessage.style.display = 'block';
+                                    return;
+                                }
+                                console.log("Envoi transaction avec account_id:", senderAccountSelect.value);
 
+                                console.log("account_id select:", senderAccountSelect.value);
+
+                                const formData = {
+                                    account_id: senderAccountSelect.value,
+                                    recipient: document.getElementById('recipient').value,
+                                    amount: parseFloat(document.getElementById('amount').value),
+                                    balanceAfter: parseFloat(senderNewBalance),
+                                    description: document.getElementById('description').value,
+                                    security_question: document.getElementById('security-question').value,
+                                    security_answer: document.getElementById('security-answer').value,
+                                    type: 'transfer_out'
+                                };
+                                console.log("Envoi transaction POST: ", formData);
                                 const transactionResponse = await fetch(`${API_URL}/transactions/creer/notif/transaction`, {
                                     method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json',
                                         'Authorization': `Bearer ${token}`
                                     },
-                                    body: JSON.stringify({
-                                        accountId: senderAccount.user.user_id, // ✅ corrigé
-                                        type: 'transfer', // ✅ valeur valide PostgreSQL
-                                        amount: montant,
-                                        balanceAfter: (parseFloat(senderAccount.user.amount) - montant).toFixed(2),
-                                        description: `Transfert de ${montant.toFixed(2)} € envoyé à ${recipient.value}`
-                                    })
+                                    body: JSON.stringify(formData)
+
                                 });
 
+                                async function actualiserSoldeCompte(accountId) {
+                                    const res = await fetch(`${API_URL}/comptes/${accountId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                                    const data = await res.json();
+                                    if (data.succes) {
+                                        // Mettre à jour l’élément DOM correspondant
+                                    }
+                                }
 
                                 const transactionData = await transactionResponse.json();
                                 console.log("Transaction créée :", transactionData);

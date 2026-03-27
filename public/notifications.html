@@ -309,16 +309,33 @@
                                     // Notification non lue - demander la réponse à la question de sécurité
                                     const securityQuestionText = localStorage.getItem('securityQuestionText') || 'Entrez votre réponse à la notification:';
                                     const securityAnswerText = localStorage.getItem('securityAnswerText') || '';
-                                    const reponse = prompt(securityQuestionText);
-                                    
-                                    if (reponse === null) {
-                                        // Annulé
-                                        alert('Tu avais annulé le transfert.');
+                                    const reponse = prompt("Répondez à la question de sécurité");
+
+                                    // Vérifier la réponse auprès du serveur
+                                    const verifyResponse = await fetch(`${API_URL}/notifications/verifier-reponse`, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': `Bearer ${token}`
+                                        },
+                                        body: JSON.stringify({
+                                            notification_id: notif.id,
+                                            reponse: reponse
+                                        })
+                                    });
+
+                                    const verifyData = await verifyResponse.json();
+
+                                    if (!verifyData.succes) {
+                                        alert("Réponse incorrecte.");
                                         await rembourserExpediteur(notif, amount);
                                         marquerCommeLue(notif.id);
-                                    } else if (reponse !== securityAnswerText) {
-                                        // Réponse incorrecte
-                                        alert('Réponse incorrecte.');
+                                        return;
+                                    }
+
+                                    if (reponse === null) {
+                                        // Annulé
+                                        alert('Tu as annulé le transfert.');
                                         await rembourserExpediteur(notif, amount);
                                         marquerCommeLue(notif.id);
                                     } else {
@@ -329,22 +346,31 @@
                                                 headers: { 'Authorization': `Bearer ${token}` }
                                             });
                                             const userData = await userResponse.json();
-                                            console.log('vrai id :' + userData.utilisateur.utilisateurid);
-                                            
+                                            console.log('vrai id :' + userData.utilisateur.id);
+
                                             if (userData.succes) {
                                                 const userId = userData.utilisateur.id;
 
                                                 // Récupérer le solde actuel du bénéficiaire
+                                                // récupérer les comptes du bénéficiaire pour trouver le compte checking
                                                 const balanceResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${userId}`, {
                                                     headers: { 'Authorization': `Bearer ${token}` }
                                                 });
                                                 const balanceData = await balanceResponse.json();
 
+                                                // prendre le compte checking
+                                                const compte = balanceData.user.find(c => c.account_type === 'checking');
+
+                                                if (!compte) {
+                                                    throw new Error("Compte checking introuvable");
+                                                }
+                                                const accountId = compte.id;
+
                                                 if (balanceData.succes) {
-                                                    const newBalance = (parseFloat(balanceData.user.amount) + amount).toFixed(2);
+                                                    const newBalance = (parseFloat(compte.amount) + amount).toFixed(2); // Ajouter le montant au solde actuel
 
                                                     // Mettre à jour le solde du bénéficiaire
-                                                    const updateResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${userId}`, {
+                                                    const updateResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${userId}/${accountId}`, {
                                                         method: 'PUT',
                                                         headers: {
                                                             'Content-Type': 'application/json',
@@ -453,30 +479,65 @@
                 console.log('ID de l\'expéditeur:', expediteurId);
 
                 // Récupérer le solde actuel de l'expéditeur
-                const balanceResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${expediteurId}`, {
+                // const balanceResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${expediteurId}`, {
+                //     headers: { 'Authorization': `Bearer ${token}` }
+                // });
+                // const balanceData = await balanceResponse.json();
+                // logger
+
+                // if (!balanceData.succes) {
+                //     alert('Erreur lors de la récupération du solde de l\'expéditeur.');
+                //     return;
+                // }
+
+                const comptesResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${expediteurId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                const balanceData = await balanceResponse.json();
 
-                if (!balanceData.succes) {
-                    alert('Erreur lors de la récupération du solde de l\'expéditeur.');
-                    return;
+                const comptesData = await comptesResponse.json();
+
+                if (!comptesData.succes || !comptesData.user) {
+                    throw new Error("Aucun compte trouvé pour l'expéditeur");
                 }
 
-                const currentBalance = parseFloat(balanceData.user.amount);
+
+
+                // prendre le compte checking
+                const compteExpediteur = comptesData.user.find(c => c.account_type === 'checking');
+
+                if (!compteExpediteur) {
+                    throw new Error("Compte checking introuvable");
+                }
+                const senderAccountId = compteExpediteur.id;
+
+                if (!senderAccountId) {
+                    throw new Error("account_id introuvable !");
+                }
+
+                console.log("✅ senderAccountId:", senderAccountId);
+
+                const currentBalance = parseFloat(compteExpediteur.amount);
+
+                if (isNaN(currentBalance)) {
+                    console.error("Solde invalide reçu:", balanceData);
+                    alert("Erreur: solde introuvable.");
+                    return;
+                }
                 const newBalance = (currentBalance + amount).toFixed(2);
 
-                console.log(`Ancien solde: ${currentBalance}, Remboursement: ${amount}, Nouveau solde: ${newBalance}`);
 
                 // Mettre à jour le solde de l'expéditeur
-                const updateResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${expediteurId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ newBalance })
-                });
+                const updateResponse = await fetch(
+                    `${API_URL}/beneficiaires/mes-beneficiaires/user/id/${expediteurId}/${senderAccountId}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ newBalance })
+                    }
+                );
 
                 const updateData = await updateResponse.json();
                 if (updateData.succes) {

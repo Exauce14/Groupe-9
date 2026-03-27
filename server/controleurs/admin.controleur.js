@@ -91,11 +91,12 @@ exports.approuverInscription = async (req, res, next) => {
 
     // 3. Créer un compte chèques par défaut avec solde initial de 5$
     console.log('\n💰 CRÉATION DU COMPTE CHÈQUES...');
+    const typeCompte = demande.account_type || 'checking'; // ou 'savings'
     const compteResult = await query(
       `INSERT INTO accounts (user_id, account_type, balance)
        VALUES ($1, 'checking', 5.00)
        RETURNING id, account_number`,
-      [userId]
+      [userId, typeCompte]
     );
 
     const compte = compteResult.rows[0];
@@ -245,9 +246,6 @@ exports.demandesEnAttente = async (req, res, next) => {
         r.account_type AS type_compte,
         r.card_type AS type_carte,
         r.requested_limit AS limite_demandee,
-        r.requested_amount AS montant_demande,
-        r.duration_months AS duree_mois,
-        r.property_value AS valeur_propriete,
         r.justification,
         r.created_at AS date_demande,
         u.id AS utilisateur_id,
@@ -283,10 +281,16 @@ exports.approuverDemande = async (req, res, next) => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     const demandeResult = await query(
-      `SELECT r.*, u.email, u.first_name AS prenom 
-       FROM requests r
-       JOIN users u ON r.user_id = u.id
-       WHERE r.id = $1`,
+      `SELECT 
+  r.id,
+  r.user_id,
+  r.request_type,
+  r.account_type,
+  u.email,
+  u.first_name AS prenom
+FROM requests r
+JOIN users u ON r.user_id = u.id
+WHERE r.id = $1`,
       [demandeId]
     );
 
@@ -317,11 +321,12 @@ exports.approuverDemande = async (req, res, next) => {
     if (demande.request_type === 'account_opening') {
       console.log('\n💰 CRÉATION COMPTE ÉPARGNE...');
       
+      const accountType = demande.account_type || 'savings';
       const compteResult = await query(
         `INSERT INTO accounts (user_id, account_type, balance)
          VALUES ($1, $2, 0.00)
          RETURNING id, account_number`,
-        [demande.user_id, demande.account_type]
+        [demande.user_id, accountType]
       );
 
       const compte = compteResult.rows[0];
@@ -438,9 +443,15 @@ exports.approuverDemande = async (req, res, next) => {
       console.log('  - Valeur propriété:', valeurPropriete + '$');
       console.log('  ⚠️  Gestion complète dans Sprint 2');
     }
-
+    if (!demande.user_id) {
+  console.error('❌ ERREUR: user_id manquant dans la demande');
+  return res.status(500).json({
+    succes: false,
+    message: "Erreur interne: utilisateur introuvable pour cette demande"
+  });
+}
     await notificationModel.creer({
-      utilisateurId: demande.user_id,
+      user_id: demande.user_id,
       type: 'request_approved',
       titre: 'Demande approuvée',
       message: `Votre demande de ${demande.request_type} a été approuvée !`,

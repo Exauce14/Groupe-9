@@ -1,5 +1,5 @@
 const { ajouterBeneficiaire } = require('../modeles/ajout.beneficiaire');
-const { obtenirBeneficiairesParUtilisateur, trouverUsersParEmail, obtenirUserParUserId, updateParUserId, obtenirAllUsers} = require('../modeles/ajout.beneficiaire');
+const { obtenirBeneficiairesParUtilisateur, trouverUsersParEmail, obtenirUserParUserId, updateParUserId, obtenirAllUsers, updateCompteParUserIdEtIdCompte} = require('../modeles/ajout.beneficiaire');
 
 exports.ajouterBeneficiaire = async (req, res, next) => {
   try {
@@ -146,6 +146,48 @@ exports.updateParUserId = async (req, res, next) => {
     }
 
     const updatedAccount = await updateParUserId(userId, balance); // ✅ utiliser balance
+
+    if (!updatedAccount) {
+      return res.status(404).json({
+        succes: false,
+        message: 'Utilisateur non trouvé pour la mise à jour du solde'
+      });
+    }
+
+    res.json({
+      succes: true,
+      account: updatedAccount
+    });
+
+  } catch (error) {
+    console.error('Erreur mise à jour solde par userId:', error);
+    next(error);
+  }
+};
+
+
+exports.updateComptesParUserIdEtIdCompte = async (req, res, next) => {
+  try {
+    const { userId, compteId  } = req.params;
+    const { newBalance } = req.body;
+
+    if (newBalance === undefined) {
+      return res.status(400).json({
+        succes: false,
+        message: 'Le nouveau solde est requis pour la mise à jour.'
+      });
+    }
+
+    const balance = parseFloat(newBalance);
+
+    if (isNaN(balance)) {
+      return res.status(400).json({
+        succes: false,
+        message: "Montant invalide (NaN interdit)"
+      });
+    }
+
+    const updatedAccount = await updateCompteParUserIdEtIdCompte(userId, compteId, balance); // ✅ utiliser balance
 
     if (!updatedAccount) {
       return res.status(404).json({
