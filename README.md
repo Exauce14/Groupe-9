@@ -35,21 +35,54 @@ Les outils suivants ont été utilisés :
 
 ```bash
 npm test
+```
+
+### Lancer uniquement le test de sécurité
+
+```bash
+npm test -- security.test.js
+```
 
 5. Types de tests réalisés
-    Tests des modèles
-Vérification des requêtes SQL
-Validation des insertions et récupérations de données
-Vérification des fonctions métier (ex: notifications)
-    Tests des routes (API)
-Vérification des endpoints
-Tests des requêtes GET, POST, PUT
-Vérification des réponses JSON
-    Tests des middlewares
-Authentification (JWT)
-Validation des données
 
-6. Exemple de test
+- Tests des modèles
+  - Vérification des requêtes SQL
+  - Validation des insertions et récupérations de données
+  - Vérification des fonctions métier (ex: notifications)
+
+- Tests des routes (API)
+  - Vérification des endpoints
+  - Tests des requêtes GET, POST, PUT
+  - Vérification des réponses JSON
+
+- Tests des middlewares
+  - Authentification (JWT)
+  - Validation des données
+
+- Tests de sécurité (nouveau)
+  - Protection contre SQL Injection
+  - Protection XSS (entrée utilisateur)
+  - Brute force / limitation de tentatives
+
+## 6. Tests de sécurité
+
+Les tests de sécurité couvrent :
+- Tentative d'injection SQL sur l'endpoint `/api/auth/connexion`
+- Tentative de XSS dans le champ `prenom` de l'endpoint `/api/auth/inscription`
+- Charge de connexions invalides pour simuler un bruteforce
+
+### Commande de test de sécurité
+
+```bash
+npm test -- security.test.js
+```
+
+### Résultats attendus
+
+- 3 tests doivent passer : SQL injection, XSS, bruteforce
+- Couverture minimale sur les contrôleurs, middlewares et routes critiques
+
+7. Exemple de test
 test('retourne false si réponse incorrecte', async () => {
     const result = await notificationModel.verifierReponse(1, 'mauvaise');
     expect(result).toBe(false);
