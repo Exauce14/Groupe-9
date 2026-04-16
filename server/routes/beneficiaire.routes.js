@@ -11,5 +11,7 @@ router.get('/mes-beneficiaires/user/id/:userId', verifierToken, ajoutBeneficiair
 router.get('/mes-beneficiaires/users/all', verifierToken, ajoutBeneficiaire.listerAllUsers);
 router.put('/mes-beneficiaires/user/id/:userId', verifierToken, ajoutBeneficiaire.updateParUserId);
 router.put('/mes-beneficiaires/user/id/:userId/:compteId', verifierToken, ajoutBeneficiaire.updateComptesParUserIdEtIdCompte);
+router.put('/mes-beneficiaires/user/update/:userId', verifierToken, ajoutBeneficiaire.updateUserParUserId); 
+
 
 module.exports = router;

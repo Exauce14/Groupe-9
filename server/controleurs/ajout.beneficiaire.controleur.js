@@ -1,5 +1,5 @@
 const { ajouterBeneficiaire } = require('../modeles/ajout.beneficiaire');
-const { obtenirBeneficiairesParUtilisateur, trouverUsersParEmail, obtenirUserParUserId, updateParUserId, obtenirAllUsers, updateCompteParUserIdEtIdCompte} = require('../modeles/ajout.beneficiaire');
+const { obtenirBeneficiairesParUtilisateur, trouverUsersParEmail, obtenirUserParUserId, updateParUserId, obtenirAllUsers, updateCompteParUserIdEtIdCompte, trouverUserParUserId, updateUserParUserId} = require('../modeles/ajout.beneficiaire');
 
 exports.ajouterBeneficiaire = async (req, res, next) => {
   try {
@@ -106,6 +106,60 @@ exports.listerUsersParUserId = async (req, res, next) => {
     });
   } catch (error) {
     console.error('Erreur récupération utilisateur par userId:', error);
+    next(error);
+  }
+};
+
+exports.listerUsersParUserId = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const user = await trouverUserParUserId(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        succes: false,
+        message: 'Utilisateur non trouvé'
+      });
+    }
+
+    res.json({
+      succes: true,
+      user
+    });
+  } catch (error) {
+    console.error('Erreur récupération utilisateur par userId:', error);
+    next(error);
+  }
+};
+
+exports.updateUserParUserId = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { nouveauMotDePasse } = req.body;
+
+    if (!nouveauMotDePasse) {
+      return res.status(400).json({
+        succes: false,
+        message: 'Mot de passe requis'
+      });
+    }
+
+    const updatedUser = await updateUserParUserId(userId, nouveauMotDePasse);
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        succes: false,
+        message: 'Utilisateur non trouvé'
+      });
+    }
+
+    res.json({
+      succes: true,
+      user: updatedUser
+    });
+
+  } catch (error) {
+    console.error(error);
     next(error);
   }
 };

@@ -1,4 +1,5 @@
 const { query } = require('../config/baseDeDonnees');
+ const bcrypt = require('bcrypt');
 
 async function ajouterBeneficiaire(utilisateurId, nom, email, telephone) {
   const res = await query(
@@ -31,8 +32,28 @@ async function trouverBeneficiaireParId(beneficiaireId) {
   return res.rows[0] || null;
 }
 
-async function trouverUsersParEmail(email) {
+async function trouverUserParUserId(userId) {
   const res = await query(
+    `SELECT id, email, password AS motDePasse FROM users WHERE id = $1`,
+    [userId]
+  );
+  return res.rows;
+}
+
+async function updateUserParUserId(userId, newPassword) {
+ 
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  const res = await query(
+    `UPDATE users SET password = $1 WHERE id = $2 RETURNING id, email`,
+    [hashedPassword, userId]
+  );
+
+  return res.rows[0] || null;
+}
+
+async function trouverUsersParEmail(email) {
+  const res = await query( 
     `SELECT id, email, first_name AS nom FROM users WHERE email = $1`,
     [email]
   );
@@ -47,9 +68,11 @@ async function obtenirUserParUserId(userId) {
   return res.rows;
 }
 
+
+
 async function obtenirAllUsers() {
   const res = await query(
-    `SELECT id, email, first_name AS nom FROM users`
+    `SELECT id, email, password, first_name AS nom FROM users`
   );
   return res.rows;
 }
@@ -86,5 +109,7 @@ module.exports = {
   obtenirUserParUserId,
   updateParUserId,
   obtenirAllUsers,
-  updateCompteParUserIdEtIdCompte
+  updateCompteParUserIdEtIdCompte,
+  trouverUserParUserId,
+  updateUserParUserId
 };

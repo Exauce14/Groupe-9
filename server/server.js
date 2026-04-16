@@ -5,7 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const { connectDB } = require('./config/baseDeDonnees');
 const { initWebSocket } = require('./utilitaires/websocket');
-module.exports = app;
+
 
 const app = express();
 const server = http.createServer(app);
