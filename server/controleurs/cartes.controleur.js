@@ -54,7 +54,7 @@ exports.bloquerCarte = async (req, res, next) => {
 
     // Créer une notification
     await notificationModel.creer({
-      utilisateurId: utilisateurId,
+      user_id: utilisateurId,
       type: 'card_blocked',
       titre: 'Carte bloquée',
       message: `Votre carte se terminant par ${carte.numero_carte.slice(-4)} a été bloquée.`,
@@ -106,7 +106,7 @@ exports.debloquerCarte = async (req, res, next) => {
 
     // Créer une notification
     await notificationModel.creer({
-      utilisateurId: utilisateurId,
+      user_id: utilisateurId,
       type: 'card_unblocked',
       titre: 'Carte débloquée',
       message: `Votre carte se terminant par ${carte.numero_carte.slice(-4)} a été débloquée.`,

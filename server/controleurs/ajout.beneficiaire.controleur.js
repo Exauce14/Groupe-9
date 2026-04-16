@@ -1,6 +1,6 @@
 const { ajouterBeneficiaire } = require('../modeles/ajout.beneficiaire');
-const { obtenirBeneficiairesParUtilisateur, trouverUsersParEmail, obtenirUserParUserId, updateParUserId, obtenirAllUsers, updateCompteParUserIdEtIdCompte, trouverUserParUserId, updateUserParUserId} = require('../modeles/ajout.beneficiaire');
-
+const { obtenirBeneficiairesParUtilisateur, trouverUsersParEmail, obtenirComptesParUserId, updateParUserId, obtenirAllUsers, updateCompteParUserIdEtIdCompte, trouverUserParUserId, updateUserParUserId, obtenirUserParUserId} = require('../modeles/ajout.beneficiaire');
+const bcrypt = require('bcrypt');
 exports.ajouterBeneficiaire = async (req, res, next) => {
   try {
     const utilisateurId = req.user.id;
@@ -93,10 +93,10 @@ exports.listerUsersParUserId = async (req, res, next) => {
     const { userId } = req.params;
     const user = await obtenirUserParUserId(userId);
 
-    if (!user) {
+    if (!user || user.length === 0) {
       return res.status(404).json({
         succes: false,
-        message: 'Utilisateur non trouvé'
+        message: 'Aucun compte trouvé pour cet utilisateur'
       });
     }
 
@@ -105,15 +105,17 @@ exports.listerUsersParUserId = async (req, res, next) => {
       user
     });
   } catch (error) {
-    console.error('Erreur récupération utilisateur par userId:', error);
+    console.error('Erreur récupération comptes utilisateur:', error);
     next(error);
   }
 };
 
-exports.listerUsersParUserId = async (req, res, next) => {
+exports.listerUserParUserId= async (req, res, next) => {
   try {
     const { userId } = req.params;
     const user = await trouverUserParUserId(userId);
+
+console.log("USER BACKEND:", user);
 
     if (!user) {
       return res.status(404).json({
@@ -135,27 +137,49 @@ exports.listerUsersParUserId = async (req, res, next) => {
 exports.updateUserParUserId = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const { nouveauMotDePasse } = req.body;
+    const { ancienMotDePasse, nouveauMotDePasse } = req.body;
 
-    if (!nouveauMotDePasse) {
+    if (!ancienMotDePasse || !nouveauMotDePasse) {
       return res.status(400).json({
         succes: false,
-        message: 'Mot de passe requis'
+        message: 'Ancien et nouveau mot de passe requis'
       });
     }
 
-    const updatedUser = await updateUserParUserId(userId, nouveauMotDePasse);
+    const user = await trouverUserParUserId(userId);
 
-    if (!updatedUser) {
+    if (!user) {
       return res.status(404).json({
         succes: false,
         message: 'Utilisateur non trouvé'
       });
     }
 
+    // sécurité importante
+    if (!user.motdepasse) {
+      return res.status(500).json({
+        succes: false,
+        message: 'Mot de passe introuvable en base'
+      });
+    }
+
+    const motDePasseValide = await bcrypt.compare(
+      ancienMotDePasse,
+      user.motdepasse
+    );
+
+    if (!motDePasseValide) {
+      return res.status(401).json({
+        succes: false,
+        message: 'Ancien mot de passe incorrect'
+      });
+    }
+
+    const updatedUser = await updateUserParUserId(userId, nouveauMotDePasse);
+
     res.json({
       succes: true,
-      user: updatedUser
+      message: 'Mot de passe modifié avec succès'
     });
 
   } catch (error) {
@@ -225,6 +249,8 @@ exports.updateComptesParUserIdEtIdCompte = async (req, res, next) => {
     const { userId, compteId  } = req.params;
     const { newBalance } = req.body;
 
+    console.log('🔄 Requête mise à jour solde reçue - UserID:', userId, 'CompteID:', compteId, 'Nouveau solde:', newBalance);
+
     if (newBalance === undefined) {
       return res.status(400).json({
         succes: false,
@@ -241,7 +267,11 @@ exports.updateComptesParUserIdEtIdCompte = async (req, res, next) => {
       });
     }
 
+    console.log('💰 Solde parsé:', balance);
+
     const updatedAccount = await updateCompteParUserIdEtIdCompte(userId, compteId, balance); // ✅ utiliser balance
+
+    console.log('📝 Résultat mise à jour:', updatedAccount);
 
     if (!updatedAccount) {
       return res.status(404).json({
@@ -256,7 +286,7 @@ exports.updateComptesParUserIdEtIdCompte = async (req, res, next) => {
     });
 
   } catch (error) {
-    console.error('Erreur mise à jour solde par userId:', error);
+    console.error('❌ Erreur mise à jour solde par userId:', error);
     next(error);
   }
 };

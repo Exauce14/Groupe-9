@@ -22,7 +22,7 @@ async function obtenirBeneficiairesParUtilisateur(utilisateurId) {
   return res.rows;
 }
 
-async function trouverBeneficiaireParId(beneficiaireId) {
+async function obtenirComptesParUserId(beneficiaireId) {
   const res = await query(
     `SELECT id, utilisateur_id AS utilisateurId, nom, email, telephone, created_at AS creeLe
      FROM beneficiaires 
@@ -34,10 +34,10 @@ async function trouverBeneficiaireParId(beneficiaireId) {
 
 async function trouverUserParUserId(userId) {
   const res = await query(
-    `SELECT id, email, password AS motDePasse FROM users WHERE id = $1`,
+    `SELECT id, email, password AS motdepasse FROM users WHERE id = $1`,
     [userId]
   );
-  return res.rows;
+  return res.rows[0] || null;
 }
 
 async function updateUserParUserId(userId, newPassword) {
@@ -91,10 +91,14 @@ async function updateParUserId(userId, newBalance) {
 
 // Nouvelle fonction pour mettre à jour le solde d'un compte par userId et accountId
 async function updateCompteParUserIdEtIdCompte(userId, accountId, newBalance) {
+  console.log('🔄 Exécution SQL UPDATE - userId:', userId, 'accountId:', accountId, 'newBalance:', newBalance);
+
   const res = await query(
     `UPDATE accounts SET balance = $1 WHERE user_id = $2 AND id = $3 RETURNING id, user_id, account_number, account_type, balance AS amount`,
     [newBalance, userId, accountId]
   );
+
+  console.log('📝 Résultat SQL:', res.rows);
     console.log("UPDATE balance pour user_id:", userId + " et account_id: " + accountId);
   return res.rows[0] || null;
 
@@ -104,7 +108,7 @@ async function updateCompteParUserIdEtIdCompte(userId, accountId, newBalance) {
 module.exports = {
   ajouterBeneficiaire,
   obtenirBeneficiairesParUtilisateur,
-  trouverBeneficiaireParId,
+  obtenirComptesParUserId,
   trouverUsersParEmail,
   obtenirUserParUserId,
   updateParUserId,

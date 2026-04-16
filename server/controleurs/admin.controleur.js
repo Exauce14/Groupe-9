@@ -91,10 +91,10 @@ exports.approuverInscription = async (req, res, next) => {
 
     // 3. Créer un compte chèques par défaut avec solde initial de 5$
     console.log('\n💰 CRÉATION DU COMPTE CHÈQUES...');
-    const typeCompte = demande.account_type || 'checking'; // ou 'savings'
+    const typeCompte = 'checking'; // Compte chèques par défaut pour tous les nouveaux utilisateurs
     const compteResult = await query(
       `INSERT INTO accounts (user_id, account_type, balance)
-       VALUES ($1, 'checking', 5.00)
+       VALUES ($1, $2, 5.00)
        RETURNING id, account_number`,
       [userId, typeCompte]
     );
@@ -133,7 +133,7 @@ exports.approuverInscription = async (req, res, next) => {
     // 6. Créer une notification
     console.log('\n📢 CRÉATION NOTIFICATION...');
     await notificationModel.creer({
-      utilisateurId: userId,
+      user_id: userId,
       type: 'request_approved',
       titre: 'Compte approuvé',
       message: 'Félicitations ! Votre compte Fortivia Bank a été approuvé. Un compte chèques avec une carte de débit a été créé pour vous.',
@@ -143,9 +143,9 @@ exports.approuverInscription = async (req, res, next) => {
     // Envoyer email (ne pas bloquer si erreur)
       try {
         await emailUtils.envoyerEmailDemandeApprouvee(
-          demande.email,
-          demande.prenom,
-          demande.request_type
+          utilisateur.email,
+          utilisateur.prenom,
+          'inscription' // Type de demande pour l'approbation d'inscription
       );
       } catch (emailError) {
         console.error('⚠️ Erreur envoi email (ignorée):', emailError.message);
@@ -212,7 +212,7 @@ exports.rejeterInscription = async (req, res, next) => {
     );
 
     await notificationModel.creer({
-      utilisateurId: userId,
+      user_id: userId,
       type: 'request_rejected',
       titre: 'Inscription refusée',
       message: `Votre demande d'inscription a été refusée. Raison: ${raison}`,
@@ -607,7 +607,7 @@ exports.bloquerUtilisateur = async (req, res, next) => {
 
     // Créer notification
     await notificationModel.creer({
-      utilisateurId: userId,
+      user_id: userId,
       type: 'account_suspended',
       titre: 'Compte suspendu',
       message: `Votre compte a été suspendu par un administrateur. Raison: ${raison}`,
@@ -654,7 +654,7 @@ exports.debloquerUtilisateur = async (req, res, next) => {
 
     // Créer notification
     await notificationModel.creer({
-      utilisateurId: userId,
+      user_id: userId,
       type: 'account_reactivated',
       titre: 'Compte réactivé',
       message: 'Votre compte a été réactivé par un administrateur. Vous pouvez maintenant vous reconnecter.',

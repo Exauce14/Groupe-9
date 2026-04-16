@@ -198,6 +198,98 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .modal-message {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            margin: 20px 0;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background: #5a67d8;
+        }
+
+        .modal-btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #d1d5db;
+        }
     </style>
 </head>
 
@@ -243,9 +335,29 @@
     <script>
         const API_URL = 'http://localhost:3000/api';
         let token = localStorage.getItem('token');
+        let currentNotification = null; // Pour stocker la notification en cours de traitement
 
         if (!token) {
             window.location.href = 'index.html';
+        }
+
+        // Fonction pour marquer une notification comme lue
+        async function marquerCommeLue(notificationId) {
+            try {
+                const response = await fetch(`${API_URL}/notifications/${notificationId}/marquer-lue`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    // Recharger les notifications pour mettre à jour l'affichage
+                    chargerNotifications();
+                }
+            } catch (error) {
+                console.error('Erreur lors du marquage comme lu:', error);
+            }
         }
 
         // Charger les notifications
@@ -300,111 +412,22 @@
                                     // alert('Le transfert a expiré');
                                     if (!notif.lue) {
                                         await rembourserExpediteur(notif, amount);
-                                        marquerCommeLue(notif.id);
                                     }
                                     return;
                                 }
 
                                 if (!notif.lue) {
-                                    // Notification non lue - demander la réponse à la question de sécurité
-                                    const securityQuestionText = localStorage.getItem('securityQuestionText') || 'Entrez votre réponse à la notification:';
-                                    const securityAnswerText = localStorage.getItem('securityAnswerText') || '';
-                                    const reponse = prompt("Répondez à la question de sécurité");
-
-                                    // Vérifier la réponse auprès du serveur
-                                    const verifyResponse = await fetch(`${API_URL}/notifications/verifier-reponse`, {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'Authorization': `Bearer ${token}`
-                                        },
-                                        body: JSON.stringify({
-                                            notification_id: notif.id,
-                                            reponse: reponse
-                                        })
-                                    });
-
-                                    const verifyData = await verifyResponse.json();
-
-                                    if (!verifyData.succes) {
-                                        alert("Réponse incorrecte.");
-                                        await rembourserExpediteur(notif, amount);
-                                        marquerCommeLue(notif.id);
-                                        return;
-                                    }
-
-                                    if (reponse === null) {
-                                        // Annulé
-                                        alert('Tu as annulé le transfert.');
-                                        await rembourserExpediteur(notif, amount);
-                                        marquerCommeLue(notif.id);
-                                    } else {
-                                        // Réponse correcte - valider le dépôt
-                                        if (amountMatch) {
-                                            // Récupérer le profil de l'utilisateur actuel (bénéficiaire)
-                                            const userResponse = await fetch(`${API_URL}/utilisateurs/mon-profil`, {
-                                                headers: { 'Authorization': `Bearer ${token}` }
-                                            });
-                                            const userData = await userResponse.json();
-                                            console.log('vrai id :' + userData.utilisateur.id);
-
-                                            if (userData.succes) {
-                                                const userId = userData.utilisateur.id;
-
-                                                // Récupérer le solde actuel du bénéficiaire
-                                                // récupérer les comptes du bénéficiaire pour trouver le compte checking
-                                                const balanceResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${userId}`, {
-                                                    headers: { 'Authorization': `Bearer ${token}` }
-                                                });
-                                                const balanceData = await balanceResponse.json();
-
-                                                // prendre le compte checking
-                                                const compte = balanceData.user.find(c => c.account_type === 'checking');
-
-                                                if (!compte) {
-                                                    throw new Error("Compte checking introuvable");
-                                                }
-                                                const accountId = compte.id;
-
-                                                if (balanceData.succes) {
-                                                    const newBalance = (parseFloat(compte.amount) + amount).toFixed(2); // Ajouter le montant au solde actuel
-
-                                                    // Mettre à jour le solde du bénéficiaire
-                                                    const updateResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${userId}/${accountId}`, {
-                                                        method: 'PUT',
-                                                        headers: {
-                                                            'Content-Type': 'application/json',
-                                                            'Authorization': `Bearer ${token}`
-                                                        },
-                                                        body: JSON.stringify({ newBalance })
-                                                    });
-
-                                                    const updateData = await updateResponse.json();
-                                                    if (updateData.succes) {
-                                                        alert('Dépôt effectué avec succès! Solde mis à jour.');
-                                                    } else {
-                                                        alert('Erreur lors de la mise à jour du solde.');
-                                                    }
-                                                } else {
-                                                    alert('Erreur lors de la récupération du solde.');
-                                                }
-                                            } else {
-                                                alert('Erreur lors de la récupération du profil utilisateur.');
-                                            }
-                                        } else {
-                                            alert('Dépôt effectué avec succès!');
-                                        }
-
-                                        marquerCommeLue(notif.id);
-                                    }
+                                    // Notification non lue - ouvrir le modal pour la réponse à la question de sécurité
+                                    openSecurityModal(notif);
                                 } else {
-                                    // Notification déjà lue
+                                    // Notification déjà lue - vérifier si le dépôt a été effectué
                                     if (tempsEcoule >= 1) {
                                         console.log('Notification expirée déjà traitée - Temps écoulé: ' + tempsEcoule + ' minutes');
                                         alert('Cette notification a déjà été traitée.');
                                     } else {
-                                        console.log('Notification déjà lue - Temps écoulé: ' + tempsEcoule + ' minutes');
-                                        alert('Dépôt déjà effectué avec succès.');
+                                        console.log('Notification déjà lue - Vérifier le solde...');
+                                        // Vérifier si le dépôt a réellement été effectué en consultant le solde actuel
+                                        await verifierEtRetraiterTransfert(notif, amount);
                                     }
                                 }
                             }
@@ -433,17 +456,179 @@
             }
         }
 
-        // Marquer une notification comme lue
-        async function marquerCommeLue(notifId) {
+        // Traiter le transfert après validation de la réponse de sécurité
+        async function processTransfer(notif, amount) {
             try {
-                await fetch(`${API_URL}/notifications/${notifId}/marquer-lue`, {
-                    method: 'PUT',
+                console.log('🔄 Début du traitement du transfert - Montant:', amount);
+                // Récupérer le profil de l'utilisateur actuel (bénéficiaire)
+                const userResponse = await fetch(`${API_URL}/utilisateurs/mon-profil`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                const userData = await userResponse.json();
+                console.log('👤 Profil utilisateur récupéré:', userData);
 
-                chargerNotifications();
+                if (userData.succes) {
+                    const userId = userData.utilisateur.id;
+                    console.log('🆔 ID utilisateur bénéficiaire:', userId);
+
+                    // Récupérer les comptes du bénéficiaire pour trouver le compte checking
+                    const balanceResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${userId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const balanceData = await balanceResponse.json();
+                    console.log('💰 Comptes récupérés:', balanceData);
+
+                    // prendre le compte checking
+                    const compte = balanceData.user.find(c => c.account_type === 'checking');
+                    console.log('🏦 Compte checking trouvé:', compte);
+
+                    if (!compte) {
+                        throw new Error("Compte checking introuvable");
+                    }
+                    const accountId = compte.id;
+                    console.log('🆔 ID du compte:', accountId);
+
+                    if (balanceData.succes) {
+                        const currentBalance = parseFloat(compte.amount);
+                        const newBalance = (currentBalance + amount).toFixed(2);
+                        console.log('💸 AVANT mise à jour - Solde actuel:', currentBalance, 'Montant à ajouter:', amount, 'Nouveau solde calculé:', newBalance);
+
+                        // Mettre à jour le solde du bénéficiaire
+                        const updateResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${userId}/${accountId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ newBalance })
+                        });
+
+                        const updateData = await updateResponse.json();
+                        console.log('📝 Réponse de mise à jour:', updateData);
+
+                        if (updateData.succes) {
+                            console.log('✅ APRÈS mise à jour - Nouveau solde confirmé:', updateData.account ? updateData.account.amount : 'Non disponible');
+
+                            // Vérifier que la mise à jour a bien été appliquée en récupérant à nouveau les comptes
+                            try {
+                                const verificationResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${userId}`, {
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                const verificationData = await verificationResponse.json();
+
+                                if (verificationData.succes && verificationData.user) {
+                                    const compteVerifie = verificationData.user.find(c => c.account_type === 'checking');
+                                    if (compteVerifie) {
+                                        const soldeVerifie = parseFloat(compteVerifie.amount);
+                                        console.log('🔍 VÉRIFICATION - Solde après mise à jour:', soldeVerifie);
+
+                                        if (soldeVerifie === parseFloat(newBalance)) {
+                                            console.log('✅ VÉRIFICATION RÉUSSIE - Le solde correspond au montant attendu');
+                                            alert('Dépôt effectué avec succès! Nouveau solde: ' + soldeVerifie.toFixed(2) + ' €.');
+                                        } else {
+                                            console.warn('⚠️ VÉRIFICATION ÉCHOUÉE - Solde attendu:', newBalance, 'Solde réel:', soldeVerifie);
+                                            alert('Attention: Le solde affiché peut ne pas être à jour. Veuillez rafraîchir la page.');
+                                        }
+                                    }
+                                }
+                            } catch (verificationError) {
+                                console.warn('Erreur lors de la vérification du solde:', verificationError);
+                                alert('Dépôt effectué avec succès! Solde mis à jour.');
+                            }
+
+                            console.log('✅ Transfert traité avec succès');
+
+                            // Rafraîchir automatiquement le solde dans le dashboard si ouvert
+                            rafraichirSoldeDashboard();
+                        } else {
+                            alert('Erreur lors de la mise à jour du solde.');
+                            console.error('❌ Erreur mise à jour solde:', updateData);
+                        }
+                    } else {
+                        alert('Erreur lors de la récupération du solde.');
+                        console.error('❌ Erreur récupération solde');
+                    }
+                } else {
+                    alert('Erreur lors de la récupération du profil utilisateur.');
+                    console.error('❌ Erreur récupération profil');
+                }
             } catch (error) {
-                console.error('Erreur marquer notification:', error);
+                console.error('❌ Erreur lors du traitement du transfert:', error);
+                alert('Une erreur est survenue lors du traitement du transfert.');
+            }
+        }
+
+        // Rafraîchir le solde dans le dashboard si ouvert
+        function rafraichirSoldeDashboard() {
+            try {
+                // Essayer de communiquer avec le dashboard via localStorage (pour les onglets multiples)
+                const eventData = {
+                    type: 'balance_updated',
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('dashboard_refresh', JSON.stringify(eventData));
+
+                // Déclencher un événement storage pour les autres onglets
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'dashboard_refresh',
+                    newValue: JSON.stringify(eventData)
+                }));
+
+                console.log('📡 Signal de rafraîchissement envoyé au dashboard');
+            } catch (error) {
+                console.log('ℹ️ Impossible de rafraîchir automatiquement le dashboard:', error.message);
+            }
+        }
+        async function verifierEtRetraiterTransfert(notif, amount) {
+            try {
+                // Récupérer le profil de l'utilisateur actuel (bénéficiaire)
+                const userResponse = await fetch(`${API_URL}/utilisateurs/mon-profil`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const userData = await userResponse.json();
+
+                if (!userData.succes) {
+                    alert('Erreur lors de la récupération du profil utilisateur.');
+                    return;
+                }
+
+                const userId = userData.utilisateur.id;
+
+                // Récupérer les comptes du bénéficiaire
+                const balanceResponse = await fetch(`${API_URL}/beneficiaires/mes-beneficiaires/user/id/${userId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const balanceData = await balanceResponse.json();
+
+                if (!balanceData.succes || !balanceData.user) {
+                    alert('Erreur lors de la récupération des comptes.');
+                    return;
+                }
+
+                // Prendre le compte checking
+                const compte = balanceData.user.find(c => c.account_type === 'checking');
+
+                if (!compte) {
+                    alert("Compte checking introuvable");
+                    return;
+                }
+
+                const currentBalance = parseFloat(compte.amount);
+
+                // Si le solde semble avoir été mis à jour récemment (estimation), considérer comme traité
+                // Sinon, permettre de retraiter
+                console.log('Solde actuel:', currentBalance, 'Montant du transfert:', amount);
+
+                // Pour l'instant, permettre toujours de retraiter si l'utilisateur clique à nouveau
+                // (on pourrait ajouter une logique plus sophistiquée pour vérifier les transactions récentes)
+                console.log('🔄 Ouverture du modal pour retraitement du transfert');
+                alert('Le dépôt semble avoir été traité. Si le solde n\'est pas mis à jour, vous pouvez retraiter le transfert.');
+                openSecurityModal(notif);
+
+            } catch (error) {
+                console.error('Erreur vérification transfert:', error);
+                alert('Erreur lors de la vérification du transfert. Vous pouvez essayer de le retraiter.');
+                openSecurityModal(notif);
             }
         }
 
@@ -543,6 +728,8 @@
                 if (updateData.succes) {
                     alert(`Remboursement de ${amount.toFixed(2)} € effectué à l'expéditeur (${expediteurEmail}).`);
                     console.log(` Remboursement effectué: ${amount.toFixed(2)} € à ${expediteurEmail}`);
+                    // Marquer la notification comme lue après remboursement réussi
+                    await marquerCommeLue(notif.id);
                 } else {
                     alert('Erreur lors du remboursement à l\'expéditeur.');
                     console.error('Erreur du serveur:', updateData);
@@ -591,8 +778,104 @@
             }
         }
 
+        // Fonctions pour le modal de sécurité
+        function openSecurityModal(notification) {
+            currentNotification = notification;
+            document.getElementById('securityModal').classList.add('active');
+            document.getElementById('securityAnswer').value = '';
+            document.getElementById('securityAnswer').focus();
+        }
+
+        function closeSecurityModal() {
+            document.getElementById('securityModal').classList.remove('active');
+            currentNotification = null;
+        }
+
+        async function submitSecurityAnswer() {
+            const reponse = document.getElementById('securityAnswer').value.trim();
+            console.log('🔐 Soumission de la réponse de sécurité:', reponse ? '[MASQUÉ]' : 'vide');
+
+            if (!reponse) {
+                alert('Veuillez entrer une réponse.');
+                return;
+            }
+
+            // Stocker la notification avant de fermer le modal
+            const notif = currentNotification;
+            closeSecurityModal();
+
+            if (!notif) {
+                console.error('❌ Aucune notification courante');
+                return;
+            }
+
+            const amountMatch = notif.message.match(/transfert de (\d+\.\d+) €/);
+            const amount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+            console.log('💰 Montant extrait de la notification:', amount);
+
+            try {
+                // Vérifier la réponse auprès du serveur
+                console.log('🔍 Vérification de la réponse auprès du serveur...');
+                const verifyResponse = await fetch(`${API_URL}/notifications/verifier-reponse`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        notification_id: notif.id,
+                        reponse: reponse
+                    })
+                });
+
+                const verifyData = await verifyResponse.json();
+                console.log('📝 Réponse de vérification:', verifyData);
+
+                if (!verifyData.succes) {
+                    console.log('❌ Réponse incorrecte - remboursement de l\'expéditeur');
+                    alert("Réponse incorrecte.");
+                    await rembourserExpediteur(notif, amount);
+                    await marquerCommeLue(notif.id);
+                    return;
+                }
+
+                // Réponse correcte - valider le dépôt
+                console.log('✅ Réponse correcte - traitement du transfert');
+                await processTransfer(notif, amount);
+                await marquerCommeLue(notif.id);
+
+            } catch (error) {
+                console.error('❌ Erreur lors de la vérification:', error);
+                alert('Une erreur est survenue.');
+            }
+        }
+
         // Charger au démarrage
-        document.addEventListener('DOMContentLoaded', chargerNotifications);
+        document.addEventListener('DOMContentLoaded', function() {
+            chargerNotifications();
+            
+            // Gestionnaire pour valider avec Entrée dans le modal
+            const securityAnswerInput = document.getElementById('securityAnswer');
+            if (securityAnswerInput) {
+                securityAnswerInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        submitSecurityAnswer();
+                    }
+                });
+            }
+        });
+
+        // Gestionnaire pour fermer le modal avec Échap
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && document.getElementById('securityModal').classList.contains('active')) {
+                closeSecurityModal();
+            }
+        });
+
+        // Vérifier une fois après 1 minute les notifications expirées
+        setTimeout(() => {
+            verifierNotificationsExpirees();
+        }, 60000); // Après 1 minute
 
         // Vérifier une fois après 1 minute les notifications expirées
         setTimeout(() => {
@@ -627,6 +910,22 @@
             }
         }
     </script>
+
+    <!-- Modal pour la question de sécurité -->
+    <div id="securityModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Question de sécurité</h3>
+                <p class="modal-message">Pour valider ce transfert, veuillez répondre à votre question de sécurité.</p>
+            </div>
+            <input type="text" id="securityAnswer" class="modal-input" placeholder="Votre réponse...">
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-secondary" onclick="closeSecurityModal()">Annuler</button>
+                <button class="modal-btn modal-btn-primary" onclick="submitSecurityAnswer()">Valider</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>

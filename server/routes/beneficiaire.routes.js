@@ -8,7 +8,8 @@ router.get('/mes-beneficiaires', verifierToken, ajoutBeneficiaire.listerBenefici
 router.get('/mes-beneficiaires/:beneficiaireId', verifierToken, ajoutBeneficiaire.listerBeneficiairesParId);
 router.get('/mes-beneficiaires/user/:email', verifierToken, ajoutBeneficiaire.listerUsersParEmail);
 router.get('/mes-beneficiaires/user/id/:userId', verifierToken, ajoutBeneficiaire.listerUsersParUserId);
-router.get('/mes-beneficiaires/users/all', verifierToken, ajoutBeneficiaire.listerAllUsers);
+router.get('/mes-beneficiaires/users/:userId', verifierToken, ajoutBeneficiaire.listerUserParUserId);
+// router.get('/mes-beneficiaires/users/all', verifierToken, ajoutBeneficiaire.listerAllUsers);
 router.put('/mes-beneficiaires/user/id/:userId', verifierToken, ajoutBeneficiaire.updateParUserId);
 router.put('/mes-beneficiaires/user/id/:userId/:compteId', verifierToken, ajoutBeneficiaire.updateComptesParUserIdEtIdCompte);
 router.put('/mes-beneficiaires/user/update/:userId', verifierToken, ajoutBeneficiaire.updateUserParUserId); 
