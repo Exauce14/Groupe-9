@@ -161,8 +161,15 @@
 
         codeInputs.forEach((input, index) => {
             input.addEventListener('input', (e) => {
-                if (e.target.value.length === 1 && index < 5) {
-                    codeInputs[index + 1].focus();
+                // N'accepter que les chiffres
+                e.target.value = e.target.value.replace(/\D/g, '');
+                if (e.target.value.length === 1) {
+                    if (index < 5) {
+                        codeInputs[index + 1].focus();
+                    } else {
+                        // Dernier chiffre saisi → vérification automatique
+                        verifierCode();
+                    }
                 }
             });
 
@@ -173,7 +180,10 @@
             });
         });
 
-        document.getElementById('verifyBtn').addEventListener('click', async () => {
+        document.getElementById('verifyBtn').addEventListener('click', verifierCode);
+
+        // Vérifie le code 2FA saisi par l'utilisateur et redirige vers le tableau de bord approprié selon son rôle.
+        async function verifierCode() {
             const code = Array.from(codeInputs).map(input => input.value).join('');
 
             if (code.length !== 6) {
@@ -196,9 +206,10 @@
 
                 if (data.succes) {
                     localStorage.setItem('token', data.token);
-                    
                     if (data.utilisateur.role === 'admin') {
                         window.location.href = 'dashboard-admin.html';
+                    } else if (data.utilisateur.role === 'enterprise') {
+                        window.location.href = 'dashboard-enterprise.html';
                     } else {
                         window.location.href = 'tableau-bord.html';
                     }
@@ -214,8 +225,9 @@
                 verifyBtn.disabled = false;
                 verifyBtn.textContent = 'Vérifier';
             }
-        });
+        }
 
+        // Renvoie un nouveau code de vérification 2FA à l'adresse courriel de l'utilisateur.
         async function renvoyerCode() {
             try {
                 const response = await fetch(`${API_URL}/auth/renvoyer-code-2fa`, {
@@ -237,6 +249,7 @@
             }
         }
 
+        // Affiche un message d'erreur dans le bloc prévu à cet effet.
         function showError(message) {
             const errorDiv = document.getElementById('errorMessage');
             errorDiv.textContent = message;

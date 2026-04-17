@@ -1,6 +1,7 @@
 const jwtUtils = require('../utilitaires/jwt.utils');
 
-// Vérifier le token JWT
+// Middleware de protection des routes : extrait et vérifie le token JWT dans l'en-tête Authorization.
+// Si valide, attache les informations de l'utilisateur décodées à req.user pour les contrôleurs suivants.
 exports.verifierToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
@@ -26,7 +27,8 @@ exports.verifierToken = (req, res, next) => {
   next();
 };
 
-// Middleware optionnel : vérifier si l'utilisateur est actif
+// Middleware optionnel qui vérifie que le compte de l'utilisateur est encore actif en base de données.
+// À utiliser après verifierToken pour les routes sensibles nécessitant une vérification supplémentaire.
 exports.verifierUtilisateurActif = async (req, res, next) => {
   try {
     const utilisateurModel = require('../modeles/utilisateur.modele');

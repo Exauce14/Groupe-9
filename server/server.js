@@ -22,9 +22,27 @@ app.use('/api/cartes', require('./routes/cartes.routes'));
 app.use('/api/demandes', require('./routes/demandes.routes'));
 app.use('/api/notifications', require('./routes/notifications.routes'));
 app.use('/api/utilisateurs', require('./routes/utilisateurs.routes'));
+app.use('/api/transactions', require('./routes/transactions.routes'));
+app.use('/api/interac', require('./routes/interac.routes'));
+app.use('/api/fournisseurs', require('./routes/fournisseurs.routes'));
 
 // Initialiser WebSocket
 const io = initWebSocket(server);
+
+// Scheduler pour les paiements planifiés (toutes les 5 minutes)
+// Démarre seulement après que la BD soit prête et les tables créées
+const { executerPaiementsPlanifies } = require('./controleurs/fournisseurs.controleur');
+const { query: dbQuery } = require('./config/baseDeDonnees');
+async function demarrerScheduler() {
+  try {
+    await dbQuery('SELECT 1 FROM scheduled_payments LIMIT 1');
+    setInterval(executerPaiementsPlanifies, 5 * 60 * 1000);
+    executerPaiementsPlanifies();
+  } catch {
+    // scheduler non disponible;
+  }
+}
+setTimeout(demarrerScheduler, 2000);
 
 // Gestionnaire d'erreurs global
 app.use((err, req, res, next) => {
@@ -43,7 +61,6 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur le port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
-  console.log('🔌 WebSocket activé pour notifications temps réel');
 });
 
 module.exports = { app, server, io };

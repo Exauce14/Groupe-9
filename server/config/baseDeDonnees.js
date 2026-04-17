@@ -2,11 +2,8 @@ const { Pool } = require('pg');
 
 // Configuration de la connexion PostgreSQL
 const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'base_de_donne_projet_integrateur',
-  password: process.env.DB_PASSWORD || 'exauce2005',
-  port: process.env.DB_PORT || 5432,
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
 });
 
 // Fonction pour exécuter des requêtes

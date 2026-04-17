@@ -211,9 +211,8 @@
             <span>Fortivia Bank</span>
         </div>
         <div class="navbar-menu">
-            <a href="tableau-bord.html">📊 Dashboard</a>
-            <a href="mes-demandes.html">📝 Mes demandes</a>
-            <a href="mes-cartes.html">💳 Mes cartes</a>
+            <a href="tableau-bord.html">🏠 Accueil</a>
+            <a href="notifications.html" class="active">🔔 Notifications</a>
             <button class="btn-logout" onclick="deconnexion()">Déconnexion</button>
         </div>
     </nav>
@@ -272,7 +271,12 @@
                     data.notifications.forEach(notif => {
                         const li = document.createElement('li');
                         li.className = notif.lue ? 'notification-item' : 'notification-item unread';
-                        li.onclick = () => marquerCommeLue(notif.id);
+                        if (notif.lien) li.style.cursor = 'pointer';
+
+                        li.onclick = async () => {
+                            await marquerCommeLue(notif.id);
+                            if (notif.lien) window.location.href = notif.lien;
+                        };
 
                         const date = new Date(notif.date_creation);
                         const temps = formatTemps(date);
@@ -282,6 +286,7 @@
                                 <div class="notification-title">
                                     ${notif.titre}
                                     ${!notif.lue ? '<span class="unread-badge">NOUVEAU</span>' : ''}
+                                    ${notif.lien ? '<span style="font-size:11px;color:#667eea;margin-left:6px;">→</span>' : ''}
                                 </div>
                                 <div class="notification-time">${temps}</div>
                             </div>
@@ -345,6 +350,7 @@
             });
         }
 
+        // Déconnecte l'utilisateur en supprimant le token et redirige vers la page de connexion.
         function deconnexion() {
             if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
                 localStorage.removeItem('token');

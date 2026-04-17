@@ -3,6 +3,9 @@ const jwt = require('jsonwebtoken');
 
 let io;
 
+// Initialise le serveur WebSocket Socket.IO sur le serveur HTTP.
+// Chaque client doit s'authentifier avec son token JWT via l'événement "authenticate".
+// Associe l'identifiant utilisateur et le rôle à la socket pour les envois ciblés.
 function initWebSocket(server) {
   io = socketIO(server, {
     cors: {
@@ -12,8 +15,6 @@ function initWebSocket(server) {
   });
 
   io.on('connection', (socket) => {
-    console.log('🔌 Nouvelle connexion WebSocket:', socket.id);
-
     socket.on('authenticate', (token) => {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -40,6 +41,7 @@ function initWebSocket(server) {
   return io;
 }
 
+// Envoie une notification en temps réel à un utilisateur spécifique via sa socket active.
 function sendNotificationToUser(userId, notification) {
   if (!io) return;
   
@@ -52,6 +54,7 @@ function sendNotificationToUser(userId, notification) {
   }
 }
 
+// Diffuse une notification à tous les administrateurs connectés via WebSocket.
 function sendNotificationToAdmin(notification) {
   if (!io) return;
   
