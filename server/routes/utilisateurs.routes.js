@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/auth.middleware');
+const authControleur = require('../controleurs/auth.controleur');
 const { query } = require('../config/baseDeDonnees');
 
 // Obtenir le profil de l'utilisateur connecté
@@ -38,5 +39,7 @@ router.get('/mon-profil', authMiddleware.verifierToken, async (req, res, next) =
     next(error);
   }
 });
+
+router.put('/changer-mot-de-passe', authMiddleware.verifierToken, authControleur.changerMotDePasse);
 
 module.exports = router;

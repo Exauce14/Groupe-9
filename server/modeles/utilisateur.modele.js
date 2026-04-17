@@ -41,6 +41,20 @@ exports.trouverParEmail = async (email) => {
   return result.rows[0] || null;
 };
 
+exports.mettreAJourMotDePasseParEmail = async (email, motDePasseHash) => {
+  await query(
+    'UPDATE users SET password = $1, login_attempts = 0, locked_until = NULL WHERE email = $2',
+    [motDePasseHash, email]
+  );
+};
+
+exports.mettreAJourMotDePasseParId = async (id, motDePasseHash) => {
+  await query(
+    'UPDATE users SET password = $1, login_attempts = 0, locked_until = NULL WHERE id = $2',
+    [motDePasseHash, id]
+  );
+};
+
 // Trouver par ID
 exports.trouverParId = async (id) => {
   const result = await query(
