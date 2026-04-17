@@ -518,7 +518,7 @@
     <script src="js/auth-check.js"></script>
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script>
-        const API_URL = 'http://localhost:3000/api';
+        const API_URL = '/api';
         let token = localStorage.getItem('token');
         let socket;
 
@@ -527,7 +527,7 @@
         }
 // Initialise la connexion WebSocket et s'authentifie pour recevoir les notifications en temps réel.
         function initWebSocket() {
-            socket = io('http://localhost:3000');
+            socket = io();
             
             socket.on('connect', () => {
                 console.log('✅ WebSocket connecté');

@@ -2,7 +2,7 @@
  * Script principal pour le tableau de bord
  */
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = '/api';
 let token = localStorage.getItem('token');
 let socket;
 
@@ -13,7 +13,7 @@ if (!token) {
 
 // Initialiser WebSocket pour notifications temps réel
 function initWebSocket() {
-    socket = io('http://localhost:3000');
+    socket = io();
     
     socket.on('connect', () => {
         console.log('✅ WebSocket connecté');

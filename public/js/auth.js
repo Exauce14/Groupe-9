@@ -2,7 +2,7 @@
  * Script pour les pages d'authentification
  */
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = '/api';
 
 // Page de connexion
 if (document.getElementById('connexionForm')) {

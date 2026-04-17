@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000/api';
+const API_URL = '/api';
 let token = localStorage.getItem('token');
 let socket;
 let currentUserId = null;
@@ -22,7 +22,7 @@ if (!token) {
 // Initialise la connexion WebSocket de l'admin.
 // Écoute les événements de nouvelles inscriptions et demandes pour rafraîchir les listes en temps réel.
 function initWebSocket() {
-    socket = io('http://localhost:3000');
+    socket = io();
     
     socket.on('connect', () => {
         console.log('✅ WebSocket Admin connecté');

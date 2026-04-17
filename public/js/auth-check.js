@@ -61,7 +61,7 @@ async function verifierStatutCompte() {
     if (!token) return;
 
     try {
-        const response = await fetch('http://localhost:3000/api/utilisateurs/mon-profil', {
+        const response = await fetch('/api/utilisateurs/mon-profil', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
