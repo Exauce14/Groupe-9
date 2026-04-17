@@ -138,7 +138,7 @@ function calculateAge(birthDate) {
     return age;
 }
 
-// Vérifier l'âge en temps réel
+// Vérifie l'âge en temps réel lors de la saisie de la date de naissance et affiche un avertissement si inférieur à 16 ans.
 dateNaissanceInput.addEventListener('change', function() {
     const age = calculateAge(this.value);
     if (age < 16) {
@@ -148,7 +148,7 @@ dateNaissanceInput.addEventListener('change', function() {
     }
 });
 
-// Indicateur de force du mot de passe
+// Met à jour l'indicateur visuel de force du mot de passe selon les critères de complexité.
 motDePasseInput.addEventListener('input', function() {
     const password = this.value;
     let strength = 0;
@@ -182,7 +182,7 @@ function hideError() {
     errorMessage.style.display = 'none';
 }
 
-// Bouton Suivant
+// Passe à l'étape suivante si la validation de l'étape courante réussit.
 nextBtn.addEventListener('click', function() {
     if (validateCurrentStep()) {
         if (currentStep < totalSteps) {
@@ -191,14 +191,14 @@ nextBtn.addEventListener('click', function() {
     }
 });
 
-// Bouton Précédent
+// Retourne à l'étape précédente du formulaire d'inscription.
 prevBtn.addEventListener('click', function() {
     if (currentStep > 1) {
         showStep(currentStep - 1);
     }
 });
 
-// Soumettre le formulaire
+// Soumet le formulaire d'inscription et redirige vers la vérification 2FA si la création du compte réussit.
 form.addEventListener('submit', async function(e) {
     e.preventDefault();
 
