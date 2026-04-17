@@ -69,7 +69,7 @@ CREATE TABLE users (
     sin VARCHAR(11), -- Numéro d'assurance sociale (9 chiffres)
     
     role VARCHAR(50) DEFAULT 'user' CHECK (role IN ('user', 'admin')),
-    account_status VARCHAR(50) DEFAULT 'pending' CHECK (account_status IN ('pending', 'active', 'suspended', 'closed')),
+    account_status VARCHAR(50) DEFAULT 'pending' CHECK (account_status IN ('pending', 'active', 'suspended', 'closed', 'rejected')),
     is_active BOOLEAN DEFAULT true,
     email_verified BOOLEAN DEFAULT false,
     login_attempts INTEGER DEFAULT 0,
