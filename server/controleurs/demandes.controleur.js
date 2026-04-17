@@ -2,6 +2,17 @@ const { query } = require('../config/baseDeDonnees');
 const notificationModel = require('../modeles/notification.modele');
 const { sendNotificationToAdmin } = require('../utilitaires/websocket');
 
+function getLabelDemande(typeDemande, valeurPropriete) {
+  if (typeDemande === 'loan') return valeurPropriete ? 'prêt hypothécaire' : 'prêt personnel';
+  const labels = { account_opening: 'ouverture de compte', credit_card: 'carte de crédit', service: 'service' };
+  return labels[typeDemande] || typeDemande;
+}
+
+function formatMontant(montant) {
+  if (!montant) return '';
+  return ` de ${Number(montant).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}`;
+}
+
 // Créer une nouvelle demande
 exports.creerDemande = async (req, res, next) => {
   try {
@@ -70,11 +81,13 @@ exports.creerDemande = async (req, res, next) => {
     console.log('✅ Demande créée - ID:', demandeId);
 
     // Créer notification pour l'utilisateur
+    const labelDemande = getLabelDemande(typeDemande, valeurPropriete);
+    const montant = montantDemande || montantInitial;
     await notificationModel.creer({
       utilisateurId: utilisateurId,
       type: 'request_submitted',
       titre: 'Demande soumise',
-      message: `Votre demande de ${typeDemande} a été soumise et est en cours d'examen.`,
+      message: `Votre demande de ${labelDemande}${formatMontant(montant)} a été soumise et est en cours d'examen.`,
       lien: '/mes-demandes.html'
     });
 
@@ -89,7 +102,7 @@ exports.creerDemande = async (req, res, next) => {
     // Notifier les admins via WebSocket
     sendNotificationToAdmin({
       type: 'new_request',
-      message: `Nouvelle demande de ${user.first_name} ${user.last_name} : ${typeDemande}`,
+      message: `Nouvelle demande de ${user.first_name} ${user.last_name} : ${labelDemande}${formatMontant(montant)}`,
       userId: utilisateurId,
       requestId: demandeId
     });
