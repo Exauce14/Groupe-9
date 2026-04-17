@@ -57,7 +57,9 @@ exports.inscriptionsEnAttente = async (req, res, next) => {
   }
 };
 
-// Approuver une inscription
+// Approuve l'inscription d'un utilisateur en attente.
+// Change le statut du compte à "active", crée un compte chèques avec 5$ de dépôt de bienvenue,
+// génère automatiquement une carte de débit, puis notifie l'utilisateur par email et WebSocket.
 exports.approuverInscription = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -187,7 +189,8 @@ exports.approuverInscription = async (req, res, next) => {
   }
 };
 
-// Rejeter une inscription
+// Rejette la demande d'inscription d'un utilisateur.
+// Met le statut à "rejected", envoie une notification et un email avec la raison du refus.
 exports.rejeterInscription = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -271,7 +274,9 @@ exports.demandesEnAttente = async (req, res, next) => {
   }
 };
 
-// Approuver une demande
+// Approuve une demande de service (ouverture de compte, placement, carte de crédit, prêt, hypothèque).
+// Selon le type de demande, crée les ressources correspondantes en base de données
+// (compte épargne, carte de crédit, dépôt de prêt, etc.) et notifie l'utilisateur.
 exports.approuverDemande = async (req, res, next) => {
   try {
     const { demandeId } = req.params;
@@ -474,7 +479,8 @@ exports.approuverDemande = async (req, res, next) => {
   }
 };
 
-// Rejeter une demande
+// Rejette une demande de service avec une raison fournie par l'admin.
+// Met le statut à "rejected" et notifie l'utilisateur par notification interne et email.
 exports.rejeterDemande = async (req, res, next) => {
   try {
     const { demandeId } = req.params;
@@ -501,11 +507,17 @@ exports.rejeterDemande = async (req, res, next) => {
       [adminId, raison, demandeId]
     );
 
+    const labelTypeAdmin = demande.request_type === 'loan'
+      ? (demande.property_value ? 'prêt hypothécaire' : 'prêt personnel')
+      : { account_opening: 'ouverture de compte', credit_card: 'carte de crédit', service: 'service' }[demande.request_type] || demande.request_type;
+    const montantAdmin = demande.requested_amount
+      ? ` de ${Number(demande.requested_amount).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}`
+      : '';
     await notificationModel.creer({
       utilisateurId: demande.user_id,
       type: 'request_rejected',
       titre: 'Demande refusée',
-      message: `Votre demande a été refusée. Raison: ${raison}`,
+      message: `Votre demande de ${labelTypeAdmin}${montantAdmin} a été refusée. Raison: ${raison}`,
       lien: '/mes-demandes.html'
     });
 
@@ -554,11 +566,8 @@ exports.tousLesUtilisateurs = async (req, res, next) => {
   }
 };
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// NOUVELLES FONCTIONS - BLOQUER/DÉBLOQUER UTILISATEUR
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-// Bloquer un compte utilisateur
+// Suspend un compte utilisateur (ne peut pas suspendre un admin).
+// Passe le statut à "suspended" et crée une notification pour l'utilisateur avec la raison.
 exports.bloquerUtilisateur = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -613,7 +622,8 @@ exports.bloquerUtilisateur = async (req, res, next) => {
   }
 };
 
-// Débloquer un compte utilisateur
+// Réactive un compte utilisateur suspendu.
+// Passe le statut à "active", réinitialise les tentatives de connexion et notifie l'utilisateur.
 exports.debloquerUtilisateur = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -658,4 +668,204 @@ exports.debloquerUtilisateur = async (req, res, next) => {
     console.error('Erreur déblocage utilisateur:', error);
     next(error);
   }
+};
+
+// Retourne toutes les transactions en attente d'approbation (dépôts et retraits),
+// avec les informations du compte et de l'utilisateur associé.
+exports.transactionsPending = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT t.id, t.transaction_type AS type, t.amount AS montant, t.description,
+              t.created_at AS date, a.account_number AS numero_compte,
+              a.account_type AS type_compte, a.balance AS solde_actuel,
+              u.first_name AS prenom, u.last_name AS nom, u.email, u.id AS user_id
+       FROM transactions t
+       JOIN accounts a ON t.account_id = a.id
+       JOIN users u ON a.user_id = u.id
+       WHERE t.status = 'pending'
+       ORDER BY t.created_at ASC`
+    );
+    res.json({ succes: true, transactions: result.rows });
+  } catch (error) {
+    console.error('Erreur transactions pending:', error);
+    next(error);
+  }
+};
+
+// Approuve un dépôt en attente : crédite le montant sur le compte de l'utilisateur,
+// met la transaction à "completed" et envoie une notification à l'utilisateur.
+exports.approuverDepot = async (req, res, next) => {
+  try {
+    const { transactionId } = req.params;
+    const adminId = req.user.id;
+
+    const txnRes = await query(
+      `SELECT t.*, a.balance AS solde_actuel, a.id AS compte_id, a.user_id
+       FROM transactions t
+       JOIN accounts a ON t.account_id = a.id
+       WHERE t.id = $1 AND t.status = 'pending' AND t.transaction_type = 'deposit'`,
+      [transactionId]
+    );
+    if (!txnRes.rows[0]) return res.status(404).json({ succes: false, message: 'Transaction introuvable.' });
+
+    const txn = txnRes.rows[0];
+    const newSolde = parseFloat(txn.solde_actuel) + parseFloat(txn.amount);
+
+    // Mettre à jour le solde
+    await query('UPDATE accounts SET balance = $1, updated_at = NOW() WHERE id = $2', [newSolde, txn.compte_id]);
+
+    // Mettre à jour la transaction
+    await query(
+      `UPDATE transactions SET status = 'completed', balance_after = $1, approved_by = $2, approved_at = NOW() WHERE id = $3`,
+      [newSolde, adminId, transactionId]
+    );
+
+    await notificationModel.creer({
+      utilisateurId: txn.user_id,
+      type: 'deposit_approved',
+      titre: 'Dépôt approuvé',
+      message: `Votre dépôt de ${parseFloat(txn.amount).toFixed(2)} $ a été approuvé et crédité sur votre compte.`,
+      lien: '/tableau-bord.html'
+    });
+
+    res.json({ succes: true, message: 'Dépôt approuvé avec succès.' });
+  } catch (error) {
+    console.error('Erreur approbation dépôt:', error);
+    next(error);
+  }
+};
+
+// Refuse un dépôt en attente : passe la transaction à "cancelled"
+// et notifie l'utilisateur avec la raison du refus.
+exports.rejeterDepot = async (req, res, next) => {
+  try {
+    const { transactionId } = req.params;
+    const { raison } = req.body;
+    const adminId = req.user.id;
+
+    const txnRes = await query(
+      `SELECT t.*, a.user_id FROM transactions t
+       JOIN accounts a ON t.account_id = a.id
+       WHERE t.id = $1 AND t.status = 'pending' AND t.transaction_type = 'deposit'`,
+      [transactionId]
+    );
+    if (!txnRes.rows[0]) return res.status(404).json({ succes: false, message: 'Transaction introuvable.' });
+
+    const txn = txnRes.rows[0];
+    await query(
+      `UPDATE transactions SET status = 'cancelled', approved_by = $1, approved_at = NOW() WHERE id = $2`,
+      [adminId, transactionId]
+    );
+
+    await notificationModel.creer({
+      utilisateurId: txn.user_id,
+      type: 'deposit_rejected',
+      titre: 'Dépôt refusé',
+      message: `Votre dépôt de ${parseFloat(txn.amount).toFixed(2)} $ a été refusé.${raison ? ' Raison : ' + raison : ''}`,
+      lien: '/tableau-bord.html'
+    });
+
+    res.json({ succes: true, message: 'Dépôt refusé.' });
+  } catch (error) {
+    console.error('Erreur rejet dépôt:', error);
+    next(error);
+  }
+};
+
+// Approuve un retrait en attente : vérifie que le solde est suffisant,
+// déduit le montant du compte, met la transaction à "completed" et notifie l'utilisateur.
+exports.approuverRetrait = async (req, res, next) => {
+  try {
+    const { transactionId } = req.params;
+    const adminId = req.user.id;
+
+    const txnRes = await query(
+      `SELECT t.*, a.balance AS solde_actuel, a.id AS compte_id, a.user_id
+       FROM transactions t
+       JOIN accounts a ON t.account_id = a.id
+       WHERE t.id = $1 AND t.status = 'pending' AND t.transaction_type = 'withdrawal'`,
+      [transactionId]
+    );
+    if (!txnRes.rows[0]) return res.status(404).json({ succes: false, message: 'Transaction introuvable.' });
+
+    const txn = txnRes.rows[0];
+    if (parseFloat(txn.solde_actuel) < parseFloat(txn.amount)) {
+      return res.status(400).json({ succes: false, message: 'Solde insuffisant pour effectuer le retrait.' });
+    }
+
+    const newSolde = parseFloat(txn.solde_actuel) - parseFloat(txn.amount);
+    await query('UPDATE accounts SET balance = $1, updated_at = NOW() WHERE id = $2', [newSolde, txn.compte_id]);
+    await query(
+      `UPDATE transactions SET status = 'completed', balance_after = $1, approved_by = $2, approved_at = NOW() WHERE id = $3`,
+      [newSolde, adminId, transactionId]
+    );
+
+    await notificationModel.creer({
+      utilisateurId: txn.user_id,
+      type: 'withdrawal_approved',
+      titre: 'Retrait approuvé',
+      message: `Votre retrait de ${parseFloat(txn.amount).toFixed(2)} $ a été approuvé et débité de votre compte.`,
+      lien: '/tableau-bord.html'
+    });
+
+    res.json({ succes: true, message: 'Retrait approuvé avec succès.' });
+  } catch (error) {
+    console.error('Erreur approbation retrait:', error);
+    next(error);
+  }
+};
+
+// Refuse un retrait en attente : passe la transaction à "cancelled"
+// sans débiter le compte, et notifie l'utilisateur avec la raison.
+exports.rejeterRetrait = async (req, res, next) => {
+  try {
+    const { transactionId } = req.params;
+    const { raison } = req.body;
+    const adminId = req.user.id;
+
+    const txnRes = await query(
+      `SELECT t.*, a.user_id FROM transactions t
+       JOIN accounts a ON t.account_id = a.id
+       WHERE t.id = $1 AND t.status = 'pending' AND t.transaction_type = 'withdrawal'`,
+      [transactionId]
+    );
+    if (!txnRes.rows[0]) return res.status(404).json({ succes: false, message: 'Transaction introuvable.' });
+
+    const txn = txnRes.rows[0];
+    await query(
+      `UPDATE transactions SET status = 'cancelled', approved_by = $1, approved_at = NOW() WHERE id = $2`,
+      [adminId, transactionId]
+    );
+
+    await notificationModel.creer({
+      utilisateurId: txn.user_id,
+      type: 'withdrawal_rejected',
+      titre: 'Retrait refusé',
+      message: `Votre retrait de ${parseFloat(txn.amount).toFixed(2)} $ a été refusé.${raison ? ' Raison : ' + raison : ''}`,
+      lien: '/tableau-bord.html'
+    });
+
+    res.json({ succes: true, message: 'Retrait refusé.' });
+  } catch (error) {
+    console.error('Erreur rejet retrait:', error);
+    next(error);
+  }
+};
+
+// Retourne la liste de tous les comptes entreprise actifs avec le nom de l'entreprise,
+// l'email et le fournisseur associé si disponible.
+exports.comptesEntreprise = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT a.id, a.account_number AS numero_compte, a.balance AS solde,
+              u.first_name AS nom_entreprise, u.email,
+              p.name AS fournisseur
+       FROM accounts a
+       JOIN users u ON a.user_id = u.id
+       LEFT JOIN providers p ON p.enterprise_account_id = a.id
+       WHERE a.account_type = 'enterprise' AND a.status = 'active'
+       ORDER BY u.first_name`
+    );
+    res.json({ succes: true, comptes: result.rows });
+  } catch (error) { next(error); }
 };

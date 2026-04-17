@@ -26,4 +26,14 @@ router.get('/utilisateurs', adminControleur.tousLesUtilisateurs);
 router.post('/utilisateurs/:userId/bloquer', adminControleur.bloquerUtilisateur);
 router.post('/utilisateurs/:userId/debloquer', adminControleur.debloquerUtilisateur);
 
+// Dépôts et retraits en attente
+router.get('/transactions-pending', adminControleur.transactionsPending);
+router.post('/transactions/:transactionId/approuver-depot', adminControleur.approuverDepot);
+router.post('/transactions/:transactionId/rejeter-depot', adminControleur.rejeterDepot);
+router.post('/transactions/:transactionId/approuver-retrait', adminControleur.approuverRetrait);
+router.post('/transactions/:transactionId/rejeter-retrait', adminControleur.rejeterRetrait);
+
+// Comptes entreprise
+router.get('/comptes-entreprise', adminControleur.comptesEntreprise);
+
 module.exports = router;

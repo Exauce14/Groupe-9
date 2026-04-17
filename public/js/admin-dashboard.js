@@ -4,12 +4,12 @@ let socket;
 let currentUserId = null;
 let currentDemandeId = null;
 
-// Sauvegarder la section active
+// Mémorise la dernière section consultée dans sessionStorage pour la restaurer après rechargement.
 function sauvegarderSectionActive(section) {
     sessionStorage.setItem('adminActiveSection', section);
 }
 
-// Restaurer la section active
+// Relit la section active depuis sessionStorage et l'affiche au chargement de la page.
 function restaurerSectionActive() {
     const section = sessionStorage.getItem('adminActiveSection') || 'dashboard';
     afficherSection(section);
@@ -19,6 +19,8 @@ if (!token) {
     window.location.href = 'index.html';
 }
 
+// Initialise la connexion WebSocket de l'admin.
+// Écoute les événements de nouvelles inscriptions et demandes pour rafraîchir les listes en temps réel.
 function initWebSocket() {
     socket = io('http://localhost:3000');
     
@@ -44,6 +46,7 @@ function initWebSocket() {
     });
 }
 
+// Charge les statistiques du tableau de bord admin (inscriptions en attente, demandes, utilisateurs actifs, cartes).
 async function chargerStats() {
     try {
         const response = await fetch(`${API_URL}/admin/statistiques`, {
@@ -80,6 +83,7 @@ async function chargerStats() {
     }
 }
 
+// Charge et affiche la liste des inscriptions en attente d'approbation dans le tableau HTML.
 async function chargerInscriptions() {
     try {
         const response = await fetch(`${API_URL}/admin/inscriptions`, {
@@ -145,12 +149,14 @@ async function chargerInscriptions() {
     }
 }
 
+// Ouvre la modale de confirmation pour approuver l'inscription d'un utilisateur.
 function approuverInscription(userId, userName) {
     currentUserId = userId;
     document.getElementById('approveUserName').textContent = `Êtes-vous sûr de vouloir approuver l'inscription de ${userName} ?`;
     openModal('approveModal');
 }
 
+// Confirme l'approbation de l'inscription : envoie la requête à l'API et rafraîchit les données.
 async function confirmApprove() {
     try {
         const response = await fetch(`${API_URL}/admin/inscriptions/${currentUserId}/approuver`, {
@@ -178,6 +184,7 @@ async function confirmApprove() {
     }
 }
 
+// Ouvre la modale de rejet d'inscription avec le nom de l'utilisateur à rejeter.
 function rejeterInscription(userId, userName) {
     currentUserId = userId;
     document.getElementById('rejectUserName').textContent = `Rejeter l'inscription de ${userName}`;
@@ -222,6 +229,7 @@ document.getElementById('rejectForm').addEventListener('submit', async (e) => {
     }
 });
 
+// Charge et affiche la liste des demandes de services (comptes, cartes, prêts) en attente d'approbation.
 async function chargerDemandes() {
     try {
         const response = await fetch(`${API_URL}/admin/demandes`, {
@@ -293,6 +301,7 @@ async function chargerDemandes() {
     }
 }
 
+// Ouvre la modale de confirmation pour approuver une demande de service, avec le nom du demandeur et le type.
 function approuverDemande(demandeId, userName, typeLabel) {
     currentDemandeId = demandeId;
     document.getElementById('approveDemandeInfo').textContent = `Demande de ${userName} - ${typeLabel}`;
@@ -331,6 +340,7 @@ document.getElementById('approveDemandeForm').addEventListener('submit', async (
     }
 });
 
+// Ouvre la modale de rejet d'une demande de service pour saisir une raison avant de confirmer.
 function rejeterDemande(demandeId, userName, typeLabel) {
     currentDemandeId = demandeId;
     document.getElementById('rejectDemandeInfo').textContent = `Demande de ${userName} - ${typeLabel}`;
@@ -374,6 +384,7 @@ document.getElementById('rejectDemandeForm').addEventListener('submit', async (e
     }
 });
 
+// Charge et affiche la liste de tous les utilisateurs avec leur statut et les boutons bloquer/débloquer.
 async function chargerUtilisateurs() {
     try {
         const response = await fetch(`${API_URL}/admin/utilisateurs`, {
@@ -439,6 +450,7 @@ async function chargerUtilisateurs() {
     }
 }
 
+// Demande une raison via un prompt et bloque le compte de l'utilisateur via l'API admin.
 function bloquerUtilisateur(userId, userName) {
     const raison = prompt(`Bloquer le compte de ${userName}.\n\nRaison du blocage :`);
     
@@ -475,6 +487,7 @@ function bloquerUtilisateur(userId, userName) {
     });
 }
 
+// Demande une confirmation et réactive le compte suspendu de l'utilisateur via l'API admin.
 function debloquerUtilisateur(userId, userName) {
     if (!confirm(`Débloquer le compte de ${userName} ?`)) {
         return;
@@ -510,6 +523,8 @@ function formatMontant(montant) {
     }).format(montant);
 }
 
+// Affiche la section demandée (dashboard, inscriptions, demandes, utilisateurs) et masque les autres.
+// Met à jour les classes actives dans la navigation et charge les données correspondantes.
 function afficherSection(section) {
     document.getElementById('sectionDashboard').style.display = 'none';
     document.getElementById('sectionInscriptions').style.display = 'none';

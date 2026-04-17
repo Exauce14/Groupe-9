@@ -438,6 +438,9 @@
                 <span id="demandesBadge" class="notification-badge" style="display: none;">0</span>
             </a>
             <a href="#" onclick="afficherSection('utilisateurs')" id="navUtilisateurs">👥 Utilisateurs</a>
+            <a href="#" onclick="afficherSection('transactions')" id="navTransactions">💵 Dépôts/Retraits</a>
+            <a href="#" onclick="afficherSection('entreprises')" id="navEntreprises">🏢 Entreprises</a>
+            <a href="#" onclick="afficherSection('fournisseurs')" id="navFournisseurs">🏪 Fournisseurs</a>
             <button class="btn-logout" onclick="deconnexion()">Déconnexion</button>
         </div>
     </nav>
@@ -518,6 +521,60 @@
             </div>
         </div>
 
+        <!-- SECTION TRANSACTIONS EN ATTENTE -->
+        <div id="sectionTransactions" style="display: none;">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>Dépôts et retraits en attente</h2>
+                </div>
+                <div id="transactionsContainer">
+                    <p style="color:#9ca3af; text-align:center; padding:30px;">Chargement...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION COMPTES ENTREPRISE -->
+        <div id="sectionEntreprises" style="display: none;">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>Comptes entreprise (fournisseurs)</h2>
+                </div>
+                <div id="entreprisesContainer">
+                    <p style="color:#9ca3af; text-align:center; padding:30px;">Chargement...</p>
+                </div>
+            </div>
+            <div class="section-card" style="margin-top:20px;">
+                <h2 style="margin-bottom:20px;">Créer un compte entreprise</h2>
+                <div id="alertFournisseur" style="display:none; padding:12px; border-radius:8px; margin-bottom:16px;"></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                    <div class="form-group">
+                        <label style="display:block; font-weight:600; margin-bottom:6px;">Nom de l'entreprise *</label>
+                        <input type="text" id="newEntrepriseNom" placeholder="Ex: Hydro-Québec" style="width:100%; padding:10px; border:2px solid #e5e7eb; border-radius:8px; font-size:14px;">
+                    </div>
+                    <div class="form-group">
+                        <label style="display:block; font-weight:600; margin-bottom:6px;">Email professionnel *</label>
+                        <input type="email" id="newEntrepriseEmail" placeholder="Ex: info@hydroquebec.com" style="width:100%; padding:10px; border:2px solid #e5e7eb; border-radius:8px; font-size:14px;">
+                    </div>
+                    <div class="form-group">
+                        <label style="display:block; font-weight:600; margin-bottom:6px;">Catégorie</label>
+                        <input type="text" id="newEntrepriseCat" placeholder="Énergie / Assurance / Télécom..." style="width:100%; padding:10px; border:2px solid #e5e7eb; border-radius:8px; font-size:14px;">
+                    </div>
+                    <div class="form-group">
+                        <label style="display:block; font-weight:600; margin-bottom:6px;">Icône</label>
+                        <input type="text" id="newEntrepriseIcone" value="🏢" style="width:80px; padding:10px; border:2px solid #e5e7eb; border-radius:8px; font-size:18px; text-align:center;">
+                    </div>
+                </div>
+                <div id="instancesContainer" style="margin-bottom:16px;">
+                    <div style="font-weight:600; margin-bottom:8px; color:#374151;">Services/Instances :</div>
+                    <div id="instancesList"></div>
+                    <button onclick="ajouterInstance()" style="background:#f3f4f6;border:2px dashed #d1d5db;color:#374151;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;margin-top:8px;">+ Ajouter un service</button>
+                </div>
+                <button onclick="creerEntreprise()" style="background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; padding:12px 28px; border-radius:10px; font-weight:600; cursor:pointer; font-size:14px;">
+                    Créer l'entreprise (mot de passe : 12345)
+                </button>
+            </div>
+        </div>
+
         <!-- SECTION UTILISATEURS -->
         <div id="sectionUtilisateurs" style="display: none;">
             <div class="section-card">
@@ -529,15 +586,73 @@
                         <tr>
                             <th>Nom</th>
                             <th>Email</th>
+                            <th>Rôle</th>
                             <th>Statut</th>
-                            <th>Revenu</th>
                             <th>Inscription</th>
-                            <th>Approbation</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- SECTION FOURNISSEURS -->
+        <div id="sectionFournisseurs" style="display: none;">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>Fournisseurs</h2>
+                    <button onclick="afficherFormFournisseur()" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;">+ Nouveau fournisseur</button>
+                </div>
+                <div id="fournisseursAdminContainer"><p style="color:#9ca3af;text-align:center;padding:30px;">Chargement...</p></div>
+            </div>
+            <div id="formFournisseurCard" class="section-card" style="display:none; margin-top:20px;">
+                <h2 style="margin-bottom:20px;" id="titreFormFournisseur">Nouveau fournisseur</h2>
+                <div id="alertFormFournisseur" style="display:none; padding:12px; border-radius:8px; margin-bottom:16px;"></div>
+                <input type="hidden" id="editFournisseurId">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                    <div class="form-group">
+                        <label>Nom *</label>
+                        <input type="text" id="formFournisseurNom" placeholder="Ex: Hydro Sherbrooke" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Icône</label>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;" id="iconPicker">
+                            <span style="font-size:22px;cursor:pointer;" onclick="choisirIcone('⚡')">⚡</span>
+                            <span style="font-size:22px;cursor:pointer;" onclick="choisirIcone('💧')">💧</span>
+                            <span style="font-size:22px;cursor:pointer;" onclick="choisirIcone('🔥')">🔥</span>
+                            <span style="font-size:22px;cursor:pointer;" onclick="choisirIcone('📱')">📱</span>
+                            <span style="font-size:22px;cursor:pointer;" onclick="choisirIcone('🌐')">🌐</span>
+                            <span style="font-size:22px;cursor:pointer;" onclick="choisirIcone('🏛️')">🏛️</span>
+                            <span style="font-size:22px;cursor:pointer;" onclick="choisirIcone('🛡️')">🛡️</span>
+                            <span style="font-size:22px;cursor:pointer;" onclick="choisirIcone('🚗')">🚗</span>
+                            <span style="font-size:22px;cursor:pointer;" onclick="choisirIcone('🏥')">🏥</span>
+                            <span style="font-size:22px;cursor:pointer;" onclick="choisirIcone('🎓')">🎓</span>
+                            <span style="font-size:22px;cursor:pointer;" onclick="choisirIcone('🏢')">🏢</span>
+                            <input type="text" id="formFournisseurIcone" value="🏢" style="width:50px;padding:6px;border:2px solid #667eea;border-radius:8px;font-size:18px;text-align:center;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Catégorie</label>
+                        <input type="text" id="formFournisseurCat" placeholder="Énergie / Assurance / Télécom..." style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Nom groupe (optionnel)</label>
+                        <input type="text" id="formFournisseurGroupe" placeholder="Ex: SAAQ (pour regrouper plusieurs instances)" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Libellé référence</label>
+                        <input type="text" id="formFournisseurRef" placeholder="Ex: Numéro de police" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Exemple référence</label>
+                        <input type="text" id="formFournisseurEx" placeholder="Ex: POL-2024-001" style="width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;">
+                    </div>
+                </div>
+                <div style="display:flex; gap:12px;">
+                    <button onclick="sauvegarderFournisseur()" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:12px 28px;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px;" id="btnSauvegarderFournisseur">Sauvegarder</button>
+                    <button onclick="annulerFormFournisseur()" style="background:#f3f4f6;color:#374151;border:2px solid #e5e7eb;padding:12px 28px;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px;">Annuler</button>
+                </div>
             </div>
         </div>
     </div>
@@ -613,5 +728,428 @@
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script src="js/auth-check.js"></script>
     <script src="js/admin-dashboard.js"></script>
+    <script>
+    // ── Fonctions pour les nouvelles sections ──────────────────────────────────
+    const _origAfficherSection = typeof afficherSection === 'function' ? afficherSection : null;
+
+    // Affiche une section étendue (transactions, entreprises, fournisseurs) en masquant les autres.
+    function afficherSectionEtendue(nom) {
+        // Masquer toutes les sections étendues
+        ['transactions', 'entreprises'].forEach(s => {
+            const el = document.getElementById(`section${s.charAt(0).toUpperCase() + s.slice(1)}`);
+            if (el) el.style.display = 'none';
+        });
+        if (nom === 'transactions') {
+            masquerToutesLessections();
+            document.getElementById('sectionTransactions').style.display = 'block';
+            document.getElementById('navTransactions').classList.add('active');
+            chargerTransactionsPending();
+        } else if (nom === 'entreprises') {
+            masquerToutesLessections();
+            document.getElementById('sectionEntreprises').style.display = 'block';
+            document.getElementById('navEntreprises').classList.add('active');
+            chargerEntreprises();
+            initialiserInstances();
+        } else if (nom === 'fournisseurs') {
+            masquerToutesLessections();
+            document.getElementById('sectionFournisseurs').style.display = 'block';
+            document.getElementById('navFournisseurs').classList.add('active');
+            chargerFournisseursAdmin();
+        }
+    }
+
+    // Masque toutes les sections de la page et retire la classe active de tous les liens de navigation.
+    function masquerToutesLessections() {
+        ['sectionDashboard','sectionInscriptions','sectionDemandes','sectionUtilisateurs',
+         'sectionTransactions','sectionEntreprises','sectionFournisseurs'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        ['navDashboard','navInscriptions','navDemandes','navUtilisateurs',
+         'navTransactions','navEntreprises','navFournisseurs'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        });
+    }
+
+    // Surcharger afficherSection pour inclure les nouvelles
+    window.afficherSection = function(nom) {
+        if (['transactions', 'entreprises', 'fournisseurs'].includes(nom)) {
+            afficherSectionEtendue(nom);
+        } else if (_origAfficherSection) {
+            _origAfficherSection(nom);
+        }
+    };
+
+    // Charge et affiche les dépôts et retraits en attente d'approbation dans la section transactions.
+    async function chargerTransactionsPending() {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/admin/transactions-pending', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        const container = document.getElementById('transactionsContainer');
+
+        if (!data.succes || data.transactions.length === 0) {
+            container.innerHTML = '<p style="color:#9ca3af; text-align:center; padding:30px;">✅ Aucune transaction en attente</p>';
+            return;
+        }
+
+        const typeLabels = { deposit: 'Dépôt', withdrawal: 'Retrait' };
+        const compteLabels = { checking: 'Chèques', savings: 'Épargne' };
+
+        container.innerHTML = `<table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="background:#f9fafb;">
+                    <th style="padding:12px; text-align:left; border-bottom:2px solid #e5e7eb;">Client</th>
+                    <th style="padding:12px; text-align:left; border-bottom:2px solid #e5e7eb;">Type</th>
+                    <th style="padding:12px; text-align:left; border-bottom:2px solid #e5e7eb;">Compte</th>
+                    <th style="padding:12px; text-align:left; border-bottom:2px solid #e5e7eb;">Montant</th>
+                    <th style="padding:12px; text-align:left; border-bottom:2px solid #e5e7eb;">Solde actuel</th>
+                    <th style="padding:12px; text-align:left; border-bottom:2px solid #e5e7eb;">Description</th>
+                    <th style="padding:12px; text-align:left; border-bottom:2px solid #e5e7eb;">Date</th>
+                    <th style="padding:12px; text-align:center; border-bottom:2px solid #e5e7eb;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.transactions.map(t => `
+                <tr>
+                    <td style="padding:12px; border-bottom:1px solid #f3f4f6;">${t.prenom} ${t.nom}<br><span style="font-size:12px;color:#9ca3af;">${t.email}</span></td>
+                    <td style="padding:12px; border-bottom:1px solid #f3f4f6;">
+                        <span style="background:${t.type==='deposit'?'#d1fae5':'#fef3c7'};color:${t.type==='deposit'?'#065f46':'#92400e'};padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;">
+                            ${typeLabels[t.type] || t.type}
+                        </span>
+                    </td>
+                    <td style="padding:12px; border-bottom:1px solid #f3f4f6;">${compteLabels[t.type_compte]||t.type_compte}<br><span style="font-size:12px;color:#9ca3af;">${t.numero_compte}</span></td>
+                    <td style="padding:12px; border-bottom:1px solid #f3f4f6; font-weight:700;">${formatAdmin(t.montant)}</td>
+                    <td style="padding:12px; border-bottom:1px solid #f3f4f6;">${formatAdmin(t.solde_actuel)}</td>
+                    <td style="padding:12px; border-bottom:1px solid #f3f4f6; font-size:13px; color:#6b7280;">${t.description||''}</td>
+                    <td style="padding:12px; border-bottom:1px solid #f3f4f6; font-size:13px;">${new Date(t.date).toLocaleDateString('fr-CA')}</td>
+                    <td style="padding:12px; border-bottom:1px solid #f3f4f6; text-align:center;">
+                        <button onclick="approuverTxn(${t.id},'${t.type}')" style="background:#d1fae5;color:#065f46;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;margin-bottom:4px;width:100%;">✓ Approuver</button>
+                        <button onclick="rejeterTxn(${t.id},'${t.type}')" style="background:#fee2e2;color:#991b1b;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;width:100%;">✕ Rejeter</button>
+                    </td>
+                </tr>`).join('')}
+            </tbody>
+        </table>`;
+    }
+
+    // Approuve un dépôt ou un retrait en attente et notifie l'utilisateur du résultat.
+    async function approuverTxn(id, type) {
+        const token = localStorage.getItem('token');
+        const endpoint = type === 'deposit' ? 'approuver-depot' : 'approuver-retrait';
+        const res = await fetch(`/api/admin/transactions/${id}/${endpoint}`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        alert(data.succes ? '✅ ' + data.message : '❌ ' + data.message);
+        if (data.succes) chargerTransactionsPending();
+    }
+
+    // Rejette un dépôt ou un retrait en attente avec une raison optionnelle et notifie le résultat.
+    async function rejeterTxn(id, type) {
+        const raison = prompt('Raison du rejet (optionnel) :');
+        if (raison === null) return;
+        const token = localStorage.getItem('token');
+        const endpoint = type === 'deposit' ? 'rejeter-depot' : 'rejeter-retrait';
+        const res = await fetch(`/api/admin/transactions/${id}/${endpoint}`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ raison })
+        });
+        const data = await res.json();
+        alert(data.succes ? '✅ ' + data.message : '❌ ' + data.message);
+        if (data.succes) chargerTransactionsPending();
+    }
+
+    // Charge et affiche la liste des comptes entreprise avec leur solde dans la section entreprises.
+    async function chargerEntreprises() {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/admin/comptes-entreprise', { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+        const container = document.getElementById('entreprisesContainer');
+
+        if (!data.succes || data.comptes.length === 0) {
+            container.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:30px;">Aucun compte entreprise</p>';
+            return;
+        }
+
+        container.innerHTML = `<table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="background:#f9fafb;">
+                    <th style="padding:12px; text-align:left; border-bottom:2px solid #e5e7eb;">Fournisseur</th>
+                    <th style="padding:12px; text-align:left; border-bottom:2px solid #e5e7eb;">Numéro de compte</th>
+                    <th style="padding:12px; text-align:right; border-bottom:2px solid #e5e7eb;">Solde</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.comptes.map(c => `
+                <tr>
+                    <td style="padding:12px; border-bottom:1px solid #f3f4f6; font-weight:600;">${c.fournisseur || c.nom_entreprise}</td>
+                    <td style="padding:12px; border-bottom:1px solid #f3f4f6; font-family:monospace;">${c.numero_compte}</td>
+                    <td style="padding:12px; border-bottom:1px solid #f3f4f6; text-align:right; font-weight:700;">${formatAdmin(c.solde)}</td>
+                </tr>`).join('')}
+            </tbody>
+        </table>`;
+    }
+
+    let instanceCount = 0;
+
+    // Réinitialise le formulaire d'instances en ajoutant une première ligne vide.
+    function initialiserInstances() {
+        document.getElementById('instancesList').innerHTML = '';
+        instanceCount = 0;
+        ajouterInstance();
+    }
+
+    // Ajoute un nouveau champ de saisie d'instance dans le formulaire de création d'entreprise.
+    function ajouterInstance() {
+        instanceCount++;
+        const div = document.createElement('div');
+        div.id = `instance-${instanceCount}`;
+        div.style.cssText = 'display:grid; grid-template-columns:2fr 2fr 2fr auto; gap:10px; align-items:end; margin-bottom:10px; padding:12px; background:#f9fafb; border-radius:8px;';
+        div.innerHTML = `
+            <div><label style="font-size:12px;font-weight:600;color:#374151;">Nom du service *</label>
+                <input type="text" id="inst-nom-${instanceCount}" placeholder="Ex: Hydro Sherbrooke" style="width:100%;padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>
+            <div><label style="font-size:12px;font-weight:600;color:#374151;">Libellé référence</label>
+                <input type="text" id="inst-ref-${instanceCount}" placeholder="Ex: Numéro de compte" style="width:100%;padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>
+            <div><label style="font-size:12px;font-weight:600;color:#374151;">Exemple référence</label>
+                <input type="text" id="inst-ex-${instanceCount}" placeholder="Ex: HQ-123456" style="width:100%;padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>
+            ${instanceCount > 1 ? `<button onclick="document.getElementById('instance-${instanceCount}').remove()" style="background:#fee2e2;color:#991b1b;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:16px;height:38px;">✕</button>` : '<div></div>'}`;
+        document.getElementById('instancesList').appendChild(div);
+    }
+
+    // Crée un compte entreprise avec ses instances de service via l'API admin.
+    async function creerEntreprise() {
+        const token = localStorage.getItem('token');
+        const nomEntreprise = document.getElementById('newEntrepriseNom').value.trim();
+        const email = document.getElementById('newEntrepriseEmail').value.trim();
+        const categorie = document.getElementById('newEntrepriseCat').value.trim();
+        const icon = document.getElementById('newEntrepriseIcone').value.trim() || '🏢';
+
+        if (!nomEntreprise || !email) { alert('Nom et email requis.'); return; }
+
+        // Collecter les instances
+        const instances = [];
+        document.querySelectorAll('[id^="instance-"]').forEach(div => {
+            const i = div.id.split('-')[1];
+            const nom = document.getElementById(`inst-nom-${i}`)?.value.trim();
+            if (nom) instances.push({
+                nom,
+                libelleRef: document.getElementById(`inst-ref-${i}`)?.value.trim(),
+                exempleRef: document.getElementById(`inst-ex-${i}`)?.value.trim()
+            });
+        });
+        if (instances.length === 0) { alert('Ajoutez au moins un service.'); return; }
+
+        const res = await fetch('/api/fournisseurs/admin/creer', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nomEntreprise, email, categorie, icon, instances })
+        });
+        const data = await res.json();
+        const alertEl = document.getElementById('alertFournisseur');
+        alertEl.style.display = 'block';
+        alertEl.style.background = data.succes ? '#d1fae5' : '#fee2e2';
+        alertEl.style.color = data.succes ? '#065f46' : '#991b1b';
+        alertEl.textContent = data.succes
+            ? `✅ Entreprise "${nomEntreprise}" créée avec ${instances.length} service(s) !`
+            : '❌ ' + data.message;
+        if (data.succes) {
+            ['newEntrepriseNom','newEntrepriseEmail','newEntrepriseCat'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('newEntrepriseIcone').value = '🏢';
+            initialiserInstances();
+            chargerEntreprises();
+        }
+    }
+
+    let fournisseursAdminListe = [];
+
+    // Charge la liste complète des fournisseurs et l'affiche dans un tableau avec actions de modification.
+    async function chargerFournisseursAdmin() {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/fournisseurs', { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+        const container = document.getElementById('fournisseursAdminContainer');
+        if (!data.succes) { container.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px;">Erreur chargement</p>'; return; }
+        fournisseursAdminListe = data.fournisseurs;
+
+        if (fournisseursAdminListe.length === 0) {
+            container.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:30px;">Aucun fournisseur</p>';
+            return;
+        }
+
+        container.innerHTML = `<table style="width:100%; border-collapse:collapse;">
+            <thead><tr style="background:#f9fafb;">
+                <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Icône</th>
+                <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Nom</th>
+                <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Groupe</th>
+                <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Catégorie</th>
+                <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Compte entreprise</th>
+                <th style="padding:12px;text-align:center;border-bottom:2px solid #e5e7eb;">Actions</th>
+            </tr></thead>
+            <tbody>
+                ${fournisseursAdminListe.map(f => `
+                <tr>
+                    <td style="padding:12px;border-bottom:1px solid #f3f4f6;font-size:24px;">${f.icon || '🏢'}</td>
+                    <td style="padding:12px;border-bottom:1px solid #f3f4f6;font-weight:600;">${f.nom}</td>
+                    <td style="padding:12px;border-bottom:1px solid #f3f4f6;color:#6b7280;">${f.group_name || '—'}</td>
+                    <td style="padding:12px;border-bottom:1px solid #f3f4f6;">${f.categorie || '—'}</td>
+                    <td style="padding:12px;border-bottom:1px solid #f3f4f6;">${f.compte_entreprise_id ? '✅' : '—'}</td>
+                    <td style="padding:12px;border-bottom:1px solid #f3f4f6;text-align:center;">
+                        <button onclick="editerFournisseur(${f.id})" style="background:#dbeafe;color:#1e40af;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;margin-right:4px;">Modifier</button>
+                        <button onclick="supprimerFournisseur(${f.id},'${f.nom.replace(/'/g,"\\\'")}')" style="background:#fee2e2;color:#991b1b;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">Supprimer</button>
+                    </td>
+                </tr>`).join('')}
+            </tbody>
+        </table>`;
+    }
+
+    // Affiche le formulaire vide de création d'un nouveau fournisseur.
+    function afficherFormFournisseur() {
+        document.getElementById('editFournisseurId').value = '';
+        document.getElementById('titreFormFournisseur').textContent = 'Nouveau fournisseur';
+        document.getElementById('formFournisseurNom').value = '';
+        document.getElementById('formFournisseurIcone').value = '🏢';
+        document.getElementById('formFournisseurCat').value = '';
+        document.getElementById('formFournisseurGroupe').value = '';
+        document.getElementById('formFournisseurRef').value = '';
+        document.getElementById('formFournisseurEx').value = '';
+        document.getElementById('formFournisseurCard').style.display = 'block';
+        document.getElementById('formFournisseurCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Pré-remplit le formulaire de fournisseur avec les données existantes pour modification.
+    function editerFournisseur(id) {
+        const f = fournisseursAdminListe.find(x => x.id === id);
+        if (!f) return;
+        document.getElementById('editFournisseurId').value = f.id;
+        document.getElementById('titreFormFournisseur').textContent = `Modifier — ${f.nom}`;
+        document.getElementById('formFournisseurNom').value = f.nom;
+        document.getElementById('formFournisseurIcone').value = f.icon || '🏢';
+        document.getElementById('formFournisseurCat').value = f.categorie || '';
+        document.getElementById('formFournisseurGroupe').value = f.group_name || '';
+        document.getElementById('formFournisseurRef').value = f.libelle_reference || '';
+        document.getElementById('formFournisseurEx').value = f.exemple_reference || '';
+        document.getElementById('formFournisseurCard').style.display = 'block';
+        document.getElementById('formFournisseurCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Masque le formulaire de création/modification de fournisseur.
+    function annulerFormFournisseur() {
+        document.getElementById('formFournisseurCard').style.display = 'none';
+    }
+
+    // Applique l'icône sélectionnée au champ d'icône du formulaire fournisseur.
+    function choisirIcone(emoji) {
+        document.getElementById('formFournisseurIcone').value = emoji;
+    }
+
+    // Sauvegarde un fournisseur (création ou mise à jour) selon la présence d'un identifiant existant.
+    async function sauvegarderFournisseur() {
+        const token = localStorage.getItem('token');
+        const id = document.getElementById('editFournisseurId').value;
+        const nom = document.getElementById('formFournisseurNom').value.trim();
+        const icon = document.getElementById('formFournisseurIcone').value.trim();
+        const categorie = document.getElementById('formFournisseurCat').value.trim();
+        const groupName = document.getElementById('formFournisseurGroupe').value.trim();
+        const libelleRef = document.getElementById('formFournisseurRef').value.trim();
+        const exempleRef = document.getElementById('formFournisseurEx').value.trim();
+
+        if (!nom) { alert('Le nom est requis.'); return; }
+
+        let url, method, body;
+        if (id) {
+            url = `/api/fournisseurs/admin/${id}`;
+            method = 'PUT';
+            body = { nom, icon, categorie, groupName, libelleRef, exempleRef };
+        } else {
+            url = '/api/fournisseurs/admin/creer';
+            method = 'POST';
+            body = {
+                nomEntreprise: nom,
+                email: '',
+                categorie,
+                icon,
+                instances: [{ nom, libelleRef, exempleRef }]
+            };
+        }
+
+        const res = await fetch(url, {
+            method,
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        const alertEl = document.getElementById('alertFormFournisseur');
+        alertEl.style.display = 'block';
+        alertEl.style.background = data.succes ? '#d1fae5' : '#fee2e2';
+        alertEl.style.color = data.succes ? '#065f46' : '#991b1b';
+        alertEl.textContent = data.succes ? '✅ Sauvegardé !' : '❌ ' + data.message;
+        if (data.succes) {
+            setTimeout(() => annulerFormFournisseur(), 1200);
+            chargerFournisseursAdmin();
+        }
+    }
+
+    // Supprime définitivement un fournisseur après confirmation de l'administrateur.
+    async function supprimerFournisseur(id, nom) {
+        if (!confirm(`Supprimer le fournisseur "${nom}" ? Cette action est irréversible.`)) return;
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/fournisseurs/admin/${id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.succes) chargerFournisseursAdmin();
+        else alert('❌ ' + data.message);
+    }
+
+    // Charge la liste de tous les utilisateurs et l'affiche avec les actions de blocage et déblocage.
+    window.chargerUtilisateurs = async function() {
+        const token = localStorage.getItem('token');
+        try {
+            const response = await fetch('/api/admin/utilisateurs', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await response.json();
+            const tbody = document.querySelector('#utilisateursTable tbody');
+            if (!data.succes || !data.utilisateurs.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:30px;">Aucun utilisateur</td></tr>';
+                return;
+            }
+            const roleLabels = { user: 'Client personnel', enterprise: 'Entreprise', admin: 'Administrateur' };
+            const statusInfo = (s) => {
+                if (s === 'active') return { label: 'Actif', class: 'badge-approved' };
+                if (s === 'suspended') return { label: 'Suspendu', class: 'badge-rejected' };
+                return { label: 'En attente', class: 'badge-pending' };
+            };
+            tbody.innerHTML = data.utilisateurs.map(user => {
+                const si = statusInfo(user.statut_compte);
+                const date = new Date(user.date_creation).toLocaleDateString('fr-CA', { year:'numeric', month:'short', day:'numeric' });
+                return `<tr>
+                    <td><strong>${user.prenom} ${user.nom}</strong></td>
+                    <td>${user.email}</td>
+                    <td>${roleLabels[user.role] || user.role || 'Client'}</td>
+                    <td><span class="badge ${si.class}">${si.label}</span></td>
+                    <td>${date}</td>
+                    <td>
+                        ${user.statut_compte === 'suspended'
+                            ? `<button class="btn btn-unblock" onclick="debloquerUtilisateur(${user.id},'${user.prenom} ${user.nom}')">🔓 Débloquer</button>`
+                            : user.statut_compte === 'active'
+                            ? `<button class="btn btn-block" onclick="bloquerUtilisateur(${user.id},'${user.prenom} ${user.nom}')">🔒 Bloquer</button>`
+                            : ''}
+                    </td>
+                </tr>`;
+            }).join('');
+        } catch (e) { console.error(e); }
+    };
+
+    // Formate un nombre en devise canadienne (CAD) pour l'affichage dans le panneau admin.
+    function formatAdmin(n) {
+        return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(n);
+    }
+    </script>
 </body>
 </html>
