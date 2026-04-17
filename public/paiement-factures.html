@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement de factures - Fortivia Bank</title>
+    <link rel="stylesheet" href="css/custom-select-compte.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .navbar-brand { display: flex; align-items: center; gap: 12px; color: white; text-decoration: none; }
+        .navbar-brand .logo { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .navbar-brand span { font-size: 20px; font-weight: 700; }
+        .navbar-menu { display: flex; gap: 8px; align-items: center; }
+        .navbar-menu a { text-decoration: none; color: white; padding: 10px 20px; border-radius: 8px; font-weight: 500; font-size: 14px; }
+        .navbar-menu a:hover { background: rgba(255,255,255,0.15); }
+        .btn-logout { background: rgba(255,255,255,0.2); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+
+        .container { max-width: 1100px; margin: 32px auto; padding: 0 20px; }
+        .page-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 16px; margin-bottom: 30px; }
+        .page-header h1 { font-size: 26px; margin-bottom: 6px; }
+        .page-header p { opacity: 0.85; font-size: 14px; }
+
+        .tabs { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+        .tab { padding: 12px 24px; border: 2px solid #e5e7eb; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; background: white; color: #6b7280; }
+        .tab.active { border-color: #667eea; background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+
+        .card { background: white; border-radius: 16px; padding: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+        .card h2 { font-size: 20px; color: #1f2937; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .card h2::before { content: ''; width: 4px; height: 22px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 2px; }
+
+        .fournisseurs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+        .fournisseur-btn { padding: 18px 12px; border: 2px solid #e5e7eb; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s; background: white; }
+        .fournisseur-btn:hover, .fournisseur-btn.selected { border-color: #667eea; background: linear-gradient(135deg, #f0f4ff, #f5f0ff); }
+        .fournisseur-btn.selected { border-color: #667eea; background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .fournisseur-icon { font-size: 32px; margin-bottom: 8px; }
+        .fournisseur-name { font-weight: 600; font-size: 13px; }
+        .fournisseur-cat { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+
+        .cat-icons { Énergie: '⚡', Assurance: '🛡️', Gouvernement: '🏛️', Télécommunications: '📱' }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 6px; font-size: 14px; }
+        .form-group select, .form-group input, .form-group textarea { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 15px; transition: border-color 0.2s; }
+        .form-group select:focus, .form-group input:focus { outline: none; border-color: #667eea; }
+        .form-group .hint { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+
+        .btn { padding: 14px 28px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; width: 100%; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+        .btn-secondary { background: #f3f4f6; color: #374151; border: 2px solid #e5e7eb; }
+        .btn-sm { padding: 8px 16px; font-size: 13px; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-danger { background: #fee2e2; color: #991b1b; }
+
+        .alert { padding: 14px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 14px; }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+
+        .detail-form { display: none; }
+        .detail-form.active { display: block; }
+
+        .payment-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 8px; }
+        .payment-item .info { font-size: 14px; }
+        .payment-item .montant { font-weight: 700; font-size: 16px; color: #1f2937; }
+
+        .planifie-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border: 1px solid #fde68a; border-radius: 10px; background: #fffbeb; margin-bottom: 8px; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-yellow { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+
+        .freq-labels { once: 'Une fois', weekly: 'Hebdomadaire', biweekly: 'Aux deux semaines', monthly: 'Mensuel' }
+
+        /* Modal confirmation */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 20px; padding: 40px; max-width: 500px; width: 90%; }
+        .modal-title { text-align: center; margin-bottom: 24px; }
+        .modal-title h3 { font-size: 20px; }
+        .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="tableau-bord.html" class="navbar-brand">
+        <div class="logo">🏦</div>
+        <span>Fortivia Bank</span>
+    </a>
+    <div class="navbar-menu">
+        <a href="tableau-bord.html">🏠 Accueil</a>
+        <a href="paiement-factures.html" class="active">📄 Paiements</a>
+        <button class="btn-logout" onclick="deconnexion()">Déconnexion</button>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-header">
+        <h1>📄 Paiement de factures</h1>
+        <p>Payez vos factures et gérez vos paiements automatiques</p>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" id="tabPayer" onclick="switchTab('payer')">💳 Payer une facture</div>
+        <div class="tab" id="tabPlanifier" onclick="switchTab('planifier')">📅 Planifier un paiement</div>
+        <div class="tab" id="tabHistorique" onclick="switchTab('historique')">📋 Historique</div>
+        <div class="tab" id="tabPlanifies" onclick="switchTab('planifies')">⏰ Paiements planifiés</div>
+    </div>
+
+    <!-- PAYER -->
+    <div id="panelPayer">
+        <div class="card">
+            <h2>Sélectionner un fournisseur</h2>
+            <div id="alertPaiement" class="alert" style="display:none;"></div>
+            <div id="fournisseursGrid" class="fournisseurs-grid"></div>
+        </div>
+
+        <div id="detailPaiement" class="card detail-form">
+            <h2 id="titreDetail">Paiement</h2>
+            <div class="form-group">
+                <label>Compte source</label>
+                <div class="custom-select-compte" id="compteSource"></div>
+            </div>
+            <div class="form-group">
+                <label id="labelReference">Numéro de référence</label>
+                <input type="text" id="numeroReference" id="numeroReference">
+                <div class="hint" id="hintReference"></div>
+            </div>
+            <div class="form-group">
+                <label>Montant (CAD)</label>
+                <input type="number" id="montantPaiement" min="0.01" step="0.01" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label>Description (optionnel)</label>
+                <input type="text" id="descriptionPaiement" placeholder="Ex: facture de janvier...">
+            </div>
+            <button class="btn btn-primary" onclick="payerFacture()">Effectuer le paiement</button>
+        </div>
+    </div>
+
+    <!-- PLANIFIER -->
+    <div id="panelPlanifier" style="display:none;">
+        <div class="card">
+            <h2>Planifier un paiement récurrent</h2>
+            <div id="alertPlanifier" class="alert" style="display:none;"></div>
+
+            <div class="form-group">
+                <label>Compte source</label>
+                <div class="custom-select-compte" id="compteSourcePlan"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Type de destinataire</label>
+                <select id="typeDestinataire" onchange="changerTypeDestinataire()">
+                    <option value="fournisseur">Fournisseur (facture)</option>
+                    <option value="membre">Membre Fortivia Bank (ex: loyer)</option>
+                </select>
+            </div>
+
+            <div id="sectFournisseur" class="form-group">
+                <label>Fournisseur</label>
+                <select id="fournisseurPlan">
+                    <option value="">-- Sélectionner --</option>
+                </select>
+            </div>
+
+            <div id="sectMembre" class="form-group" style="display:none;">
+                <label>Numéro de compte destinataire (membre Fortivia)</label>
+                <input type="text" id="numCompteDest" placeholder="XXXX-XXXX-XXXX">
+                <div class="hint">Le destinataire doit être un membre de Fortivia Bank avec un compte actif</div>
+            </div>
+
+            <div class="form-group">
+                <label>Montant (CAD)</label>
+                <input type="number" id="montantPlan" min="0.01" step="0.01" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label>Fréquence</label>
+                <select id="frequencePlan" onchange="changerFrequence()">
+                    <option value="once">Une fois</option>
+                    <option value="weekly">Hebdomadaire</option>
+                    <option value="biweekly">Aux deux semaines</option>
+                    <option value="monthly" selected>Mensuel</option>
+                </select>
+            </div>
+            <div id="sectJour" class="form-group">
+                <label>Jour du mois (1-28)</label>
+                <input type="number" id="jourDuMois" min="1" max="28" value="1" placeholder="1">
+                <div class="hint">Le paiement sera effectué ce jour chaque mois</div>
+            </div>
+            <div class="form-group">
+                <label>Date de fin (optionnel)</label>
+                <input type="date" id="dateFin">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" id="descriptionPlan" placeholder="Ex: loyer mensuel, internet...">
+            </div>
+            <button class="btn btn-primary" onclick="planifierPaiement()">Planifier le paiement</button>
+        </div>
+    </div>
+
+    <!-- HISTORIQUE -->
+    <div id="panelHistorique" style="display:none;">
+        <div class="card">
+            <h2>Historique des paiements</h2>
+            <div id="listeHistorique">
+                <p style="color:#9ca3af; text-align:center; padding:20px;">Chargement...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLANIFIÉS -->
+    <div id="panelPlanifies" style="display:none;">
+        <div class="card">
+            <h2>Paiements planifiés actifs</h2>
+            <div id="listePlanifies">
+                <p style="color:#9ca3af; text-align:center; padding:20px;">Chargement...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/auth-check.js"></script>
+<script src="js/custom-select-compte.js"></script>
+<script>
+const API_URL = 'http://localhost:3000/api';
+const token = localStorage.getItem('token');
+if (!token) window.location.href = 'index.html';
+
+let fournisseurSelectionne = null;
+let fournisseursListe = [];
+
+const catIcons = { 'Énergie': '⚡', 'Assurance': '🛡️', 'Gouvernement': '🏛️', 'Télécommunications': '📱', 'default': '🏢' };
+const freqLabels = { once: 'Une fois', weekly: 'Hebdomadaire', biweekly: 'Aux deux semaines', monthly: 'Mensuel' };
+
+// Bascule entre les onglets de la page et charge les données de l'onglet sélectionné.
+function switchTab(tab) {
+    ['payer', 'planifier', 'historique', 'planifies'].forEach(t => {
+        document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`).className = 'tab' + (t === tab ? ' active' : '');
+        document.getElementById(`panel${t.charAt(0).toUpperCase() + t.slice(1)}`).style.display = t === tab ? 'block' : 'none';
+    });
+    if (tab === 'historique') chargerHistorique();
+    if (tab === 'planifies') chargerPlanifies();
+}
+
+// Affiche ou masque les champs selon que le destinataire est un fournisseur ou un membre Fortivia.
+function changerTypeDestinataire() {
+    const type = document.getElementById('typeDestinataire').value;
+    document.getElementById('sectFournisseur').style.display = type === 'fournisseur' ? 'block' : 'none';
+    document.getElementById('sectMembre').style.display = type === 'membre' ? 'block' : 'none';
+}
+
+// Affiche ou masque le champ du jour du mois selon la fréquence de paiement sélectionnée.
+function changerFrequence() {
+    const freq = document.getElementById('frequencePlan').value;
+    document.getElementById('sectJour').style.display = freq === 'monthly' ? 'block' : 'none';
+}
+
+// Charge les comptes chèques, épargne et cartes de crédit actives pour les sélecteurs de source.
+async function chargerComptes() {
+    const [resComptes, resCartes] = await Promise.all([
+        fetch(`${API_URL}/comptes/mes-comptes`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_URL}/cartes/mes-cartes`,   { headers: { Authorization: `Bearer ${token}` } })
+    ]);
+    const dataComptes = await resComptes.json();
+    const dataCartes  = await resCartes.json();
+
+    const labels = { checking: 'Compte Chèques', savings: 'Compte Épargne', credit_card: 'Carte de crédit' };
+    const eligibles = dataComptes.succes
+        ? dataComptes.comptes.filter(c => ['checking', 'savings'].includes(c.type_compte))
+        : [];
+
+    // Ajouter les cartes de crédit actives
+    const cartesCreditItems = (dataCartes.succes ? dataCartes.cartes : [])
+        .filter(c => c.type_carte === 'credit' && c.statut === 'active')
+        .map(c => ({
+            id: c.id,               // card ID → passé comme carteId
+            type_compte: 'credit_card',
+            numero_compte: c.numero_carte,
+            solde: c.credit_disponible ?? c.limite_credit ?? 0
+        }));
+
+    const sources = [...eligibles, ...cartesCreditItems];
+    creerSelectCompte('compteSource',    sources, labels, null);
+    creerSelectCompte('compteSourcePlan', eligibles, labels, null);
+}
+
+// Charge la liste des fournisseurs disponibles et génère la grille de sélection.
+async function chargerFournisseurs() {
+    const res = await fetch(`${API_URL}/fournisseurs`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    if (!data.succes) return;
+    fournisseursListe = data.fournisseurs;
+
+    const grid = document.getElementById('fournisseursGrid');
+
+    // Grouper par group_name
+    const groupes = {};
+    const sansGroupe = [];
+    fournisseursListe.forEach(f => {
+        if (f.group_name) {
+            if (!groupes[f.group_name]) groupes[f.group_name] = [];
+            groupes[f.group_name].push(f);
+        } else {
+            sansGroupe.push(f);
+        }
+    });
+
+    let html = '';
+
+    // Fournisseurs sans groupe
+    if (sansGroupe.length > 0) {
+        html += sansGroupe.map(f => fournisseurBtnHtml(f)).join('');
+    }
+
+    // Groupes (ex: SAAQ avec plusieurs instances)
+    Object.entries(groupes).forEach(([nomGroupe, fournisseurs]) => {
+        // Un groupe = une seule icône représentative + sous-sélection au clic
+        const rep = fournisseurs[0];
+        html += `
+            <div class="fournisseur-btn fournisseur-groupe" id="btn-g-${nomGroupe.replace(/\s/g,'_')}" onclick="selectionnerGroupe('${nomGroupe.replace(/'/g,"\\'")}')" data-groupe="${nomGroupe}">
+                <div class="fournisseur-icon">${rep.icon || catIcons[rep.categorie] || catIcons.default}</div>
+                <div class="fournisseur-name">${nomGroupe}</div>
+                <div class="fournisseur-cat">${rep.categorie || ''} · ${fournisseurs.length} services</div>
+            </div>`;
+    });
+
+    // Wrapper en grille
+    grid.innerHTML = html;
+
+    // Remplir le select pour planification
+    const sel = document.getElementById('fournisseurPlan');
+    sel.innerHTML = '<option value="">-- Sélectionner --</option>';
+    fournisseursListe.forEach(f => {
+        sel.innerHTML += `<option value="${f.id}">${f.group_name ? f.group_name + ' — ' : ''}${f.nom}</option>`;
+    });
+}
+
+// Génère le HTML d'un bouton de sélection de fournisseur.
+function fournisseurBtnHtml(f) {
+    return `
+        <div class="fournisseur-btn" id="btn-f-${f.id}" onclick="selectionnerFournisseur(${f.id})">
+            <div class="fournisseur-icon">${f.icon || catIcons[f.categorie] || catIcons.default}</div>
+            <div class="fournisseur-name">${f.nom}</div>
+            <div class="fournisseur-cat">${f.categorie || ''}</div>
+        </div>`;
+}
+
+// Sélectionne un groupe de fournisseurs et affiche une sous-liste de services si plusieurs options existent.
+function selectionnerGroupe(nomGroupe) {
+    const fournisseurs = fournisseursListe.filter(f => f.group_name === nomGroupe);
+    if (fournisseurs.length === 1) {
+        selectionnerFournisseur(fournisseurs[0].id);
+        return;
+    }
+    // Afficher sous-sélection inline
+    const btn = document.querySelector(`[data-groupe="${nomGroupe}"]`);
+    const existingSubList = document.getElementById('sous-liste-groupe');
+    if (existingSubList) existingSubList.remove();
+
+    const subList = document.createElement('div');
+    subList.id = 'sous-liste-groupe';
+    subList.style.cssText = 'grid-column:1/-1; background:#f9fafb; border:2px solid #667eea; border-radius:12px; padding:16px; display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px;';
+    subList.innerHTML = `<div style="grid-column:1/-1; font-weight:700; color:#374151; margin-bottom:4px;">${nomGroupe} — Choisir un service :</div>`
+        + fournisseurs.map(f => fournisseurBtnHtml(f)).join('');
+    btn.parentElement.insertBefore(subList, btn.nextSibling);
+}
+
+// Sélectionne un fournisseur et affiche le formulaire de paiement correspondant.
+function selectionnerFournisseur(id) {
+    document.querySelectorAll('.fournisseur-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById(`btn-f-${id}`).classList.add('selected');
+
+    fournisseurSelectionne = fournisseursListe.find(f => f.id === id);
+    document.getElementById('titreDetail').textContent = `Paiement — ${fournisseurSelectionne.nom}`;
+    document.getElementById('labelReference').textContent = fournisseurSelectionne.libelle_reference || 'Numéro de référence';
+    document.getElementById('hintReference').textContent = fournisseurSelectionne.exemple_reference ? `Exemple : ${fournisseurSelectionne.exemple_reference}` : '';
+    document.getElementById('detailPaiement').classList.add('active');
+    document.getElementById('detailPaiement').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Effectue le paiement d'une facture auprès du fournisseur sélectionné depuis le compte ou la carte choisie.
+async function payerFacture() {
+    if (!fournisseurSelectionne) return;
+
+    const sourceEl = document.getElementById('compteSource');
+    const sourceType = sourceEl._selectedType;
+    const sourceId = sourceEl._selectedId;
+    const numeroReference = document.getElementById('numeroReference').value.trim();
+    const montant = parseFloat(document.getElementById('montantPaiement').value);
+    const description = document.getElementById('descriptionPaiement').value.trim();
+
+    if (!sourceId) return afficherAlerte('alertPaiement', 'Sélectionnez un compte ou une carte.', 'error');
+    if (!montant || montant <= 0) return afficherAlerte('alertPaiement', 'Montant invalide.', 'error');
+
+    const body = { fournisseurId: fournisseurSelectionne.id, numeroReference, montant, description };
+    if (sourceType === 'credit_card') {
+        body.carteId = sourceId;
+    } else {
+        body.compteSourceId = sourceId;
+    }
+
+    const res = await fetch(`${API_URL}/fournisseurs/payer`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.succes) {
+        const msg = data.pending
+            ? `Paiement de ${formatMontant(montant)} à ${fournisseurSelectionne.nom} soumis — en attente d'approbation.`
+            : `Paiement de ${formatMontant(montant)} à ${fournisseurSelectionne.nom} effectué !`;
+        afficherAlerte('alertPaiement', msg, 'success');
+        document.getElementById('montantPaiement').value = '';
+        document.getElementById('numeroReference').value = '';
+        chargerComptes();
+    } else afficherAlerte('alertPaiement', data.message, 'error');
+}
+
+// Crée un paiement récurrent planifié vers un fournisseur ou un membre Fortivia Bank.
+async function planifierPaiement() {
+    const compteSourceId = document.getElementById('compteSourcePlan')._selectedId;
+    const typeDestinataire = document.getElementById('typeDestinataire').value;
+    const fournisseurId = typeDestinataire === 'fournisseur' ? parseInt(document.getElementById('fournisseurPlan').value) || null : null;
+    const destinataireNumeroCompte = typeDestinataire === 'membre' ? document.getElementById('numCompteDest').value.trim() : null;
+    const montant = parseFloat(document.getElementById('montantPlan').value);
+    const frequence = document.getElementById('frequencePlan').value;
+    const jourDuMois = frequence === 'monthly' ? parseInt(document.getElementById('jourDuMois').value) : null;
+    const dateFin = document.getElementById('dateFin').value || null;
+    const description = document.getElementById('descriptionPlan').value.trim();
+
+    if (!compteSourceId || !montant) return afficherAlerte('alertPlanifier', 'Compte et montant requis.', 'error');
+    if (!fournisseurId && !destinataireNumeroCompte) return afficherAlerte('alertPlanifier', 'Sélectionnez un fournisseur ou entrez un numéro de compte.', 'error');
+
+    const res = await fetch(`${API_URL}/fournisseurs/planifier`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ compteSourceId, fournisseurId, destinataireNumeroCompte, montant, frequence, jourDuMois, dateFin, description })
+    });
+    const data = await res.json();
+    if (data.succes) {
+        afficherAlerte('alertPlanifier', 'Paiement planifié avec succès !', 'success');
+        document.getElementById('montantPlan').value = '';
+        document.getElementById('descriptionPlan').value = '';
+    } else afficherAlerte('alertPlanifier', data.message, 'error');
+}
+
+// Charge et affiche l'historique des paiements de factures de l'utilisateur.
+async function chargerHistorique() {
+    const res = await fetch(`${API_URL}/fournisseurs/historique`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    const liste = document.getElementById('listeHistorique');
+    if (!data.succes || data.paiements.length === 0) {
+        liste.innerHTML = '<p style="color:#9ca3af; text-align:center; padding:20px;">Aucun paiement effectué</p>';
+        return;
+    }
+    const statusLabels = { pending: 'En attente', approved: 'Approuvé', cancelled: 'Annulé', rejected: 'Rejeté', completed: 'Complété' };
+    const statusBadgeClass = { pending: 'badge-yellow', approved: 'badge-green', cancelled: '', rejected: 'badge-danger', completed: 'badge-green' };
+    liste.innerHTML = data.paiements.map(p => {
+        const status = p.status || 'completed';
+        const badgeClass = statusBadgeClass[status] || '';
+        const annulerBtn = status === 'pending'
+            ? `<button class="btn-sm btn-danger" onclick="annulerPaiement(${p.id})" style="margin-top:6px;">Annuler</button>`
+            : '';
+        return `
+        <div class="payment-item" id="paiement-hist-${p.id}" style="flex-wrap:wrap; gap:8px;">
+            <div class="info" style="flex:1;">
+                <div style="font-weight:600;">${p.icon || ''} ${p.fournisseur}</div>
+                <div style="font-size:13px; color:#6b7280;">${p.reference ? 'Réf: ' + p.reference + ' · ' : ''}${p.description || ''}</div>
+                <div style="font-size:12px; color:#9ca3af;">${new Date(p.date).toLocaleDateString('fr-CA', { year:'numeric', month:'short', day:'numeric' })}</div>
+            </div>
+            <div style="text-align:right;">
+                <div class="montant">${formatMontant(p.montant)}</div>
+                <div><span class="badge ${badgeClass}">${statusLabels[status] || status}</span></div>
+                ${annulerBtn}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// Annule un paiement en attente et rembourse le montant sur le compte de l'utilisateur.
+async function annulerPaiement(paiementId) {
+    if (!confirm('Annuler ce paiement ? Votre compte sera remboursé.')) return;
+    const res = await fetch(`${API_URL}/fournisseurs/paiements/${paiementId}/annuler`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.succes) {
+        chargerHistorique();
+        chargerComptes();
+    } else alert(data.message || 'Erreur lors de l\'annulation.');
+}
+
+// Charge et affiche la liste des paiements planifiés actifs de l'utilisateur.
+async function chargerPlanifies() {
+    const res = await fetch(`${API_URL}/fournisseurs/planifies`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    const liste = document.getElementById('listePlanifies');
+    if (!data.succes || data.paiements.length === 0) {
+        liste.innerHTML = '<p style="color:#9ca3af; text-align:center; padding:20px;">Aucun paiement planifié</p>';
+        return;
+    }
+    liste.innerHTML = data.paiements.filter(p => p.actif).map(p => `
+        <div class="planifie-item">
+            <div class="info">
+                <div style="font-weight:600;">${p.fournisseur || p.compte_destinataire || 'Destinataire'}</div>
+                <div style="font-size:13px; color:#6b7280;">${freqLabels[p.frequence] || p.frequence} · Prochain : ${new Date(p.prochaine_execution).toLocaleDateString('fr-CA')}</div>
+                <div style="font-size:13px; color:#6b7280;">${p.description || ''}</div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-weight:700; font-size:16px; margin-bottom:8px;">${formatMontant(p.montant)}</div>
+                <button class="btn-sm btn-danger" onclick="annulerPlanifie(${p.id})">Annuler</button>
+            </div>
+        </div>
+    `).join('') || '<p style="color:#9ca3af; text-align:center; padding:20px;">Aucun paiement planifié actif</p>';
+}
+
+// Annule un paiement planifié actif selon son identifiant.
+async function annulerPlanifie(id) {
+    if (!confirm('Annuler ce paiement planifié ?')) return;
+    await fetch(`${API_URL}/fournisseurs/planifies/${id}/annuler`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` } });
+    chargerPlanifies();
+}
+
+// Affiche un message d'alerte temporaire dans l'élément identifié par id.
+function afficherAlerte(id, msg, type) {
+    const el = document.getElementById(id);
+    el.className = `alert alert-${type}`;
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 7000);
+}
+
+// Formate un nombre en devise canadienne (CAD).
+function formatMontant(n) {
+    return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(n);
+}
+
+// Déconnecte l'utilisateur en supprimant le token et redirige vers la page de connexion.
+function deconnexion() {
+    if (confirm('Voulez-vous vraiment vous déconnecter ?')) { localStorage.removeItem('token'); window.location.href = 'index.html'; }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    chargerComptes();
+    chargerFournisseurs();
+    // Touche Enter — onglet Payer
+    ['numeroReference', 'montantPaiement', 'descriptionPaiement'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); payerFacture(); }
+        });
+    });
+    // Touche Enter — onglet Planifier
+    ['numCompteDest', 'montantPlan', 'dateFin', 'descriptionPlan'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); planifierPaiement(); }
+        });
+    });
+});
+</script>
+</body>
+</html>
