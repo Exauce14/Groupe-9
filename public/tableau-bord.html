@@ -358,6 +358,61 @@
             margin-bottom: 10px;
         }
 
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-button {
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            border-radius: 12px;
+            padding: 10px 16px;
+            margin-right: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .dropdown-button:hover {
+            background: rgba(255,255,255,0.24);
+            transform: translateY(-1px);
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            min-width: 220px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+            z-index: 999;
+            overflow: hidden;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-content a {
+            display: block;
+            padding: 12px 16px;
+            color: #111827;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .dropdown-content a:hover {
+            background: #f3f4f6;
+        }
+
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -376,12 +431,28 @@
             <span>Fortivia Bank</span>
         </div>
         <div class="navbar-menu">
-            <a href="mes-demandes.html">📝 Mes demandes</a>
-            <a href="mes-cartes.html">💳 Mes cartes</a>
+            <a href="mes-demandes.html">📝 Demandes</a>
+            <a href="mes-cartes.html">💳 Cartes</a>
             <a href="notifications.html">
                 🔔 Notifications
                 <span id="notificationsBadge" class="notification-badge" style="display: none;">0</span>
             </a>
+            <a href="parametres.html">⚙️ Paramètres</a>
+            <div class="dropdown">
+                <button class="dropdown-button">☰ Menu</button>
+                <div class="dropdown-content">
+                    <a href="tableau-bord.html">🏠 Accueil</a>
+                    <a href="virements.html">↔️ Virement entre comptes</a>
+                    <a href="virement-interac.html">📤 Virement Interac</a>
+                    <a href="paiement-factures.html">📄 Factures</a>
+                    <a href="depot-retrait.html">💵 Dépôt / Retrait</a>
+                    <a href="mes-demandes.html">📝 Demandes</a>
+                    <a href="mes-cartes.html">💳 Cartes</a>
+                    <a href="notifications.html">🔔 Notifications</a>
+                    <a href="parametres.html">⚙️ Paramètres</a>
+                    <a href="#" onclick="deconnexion()">🚪 Déconnexion</a>
+                </div>
+            </div>
             <button class="btn-logout" onclick="deconnexion()">Déconnexion</button>
         </div>
     </nav>
@@ -416,6 +487,22 @@
         <div class="section-card">
             <h2>Actions rapides</h2>
             <div class="quick-actions">
+                <a href="virements.html" class="action-btn" id="actionVirement">
+                    <div class="icon">↔️</div>
+                    <div>Virement interne</div>
+                </a>
+                <a href="depot-retrait.html" class="action-btn" id="actionDepot">
+                    <div class="icon">💵</div>
+                    <div>Dépôt / Retrait</div>
+                </a>
+                <a href="paiement-factures.html" class="action-btn" id="actionFactures">
+                    <div class="icon">📄</div>
+                    <div>Payer une facture</div>
+                </a>
+                <a href="virement-interac.html" class="action-btn" id="actionInterac">
+                    <div class="icon">📤</div>
+                    <div>Virement Interac</div>
+                </a>
                 <a href="mes-demandes.html" class="action-btn" id="actionDemande">
                     <div class="icon">📝</div>
                     <div>Nouvelle demande</div>
@@ -423,10 +510,6 @@
                 <a href="mes-cartes.html" class="action-btn" id="actionCartes">
                     <div class="icon">💳</div>
                     <div>Gérer mes cartes</div>
-                </a>
-                <a href="#" class="action-btn" id="actionTransactions">
-                    <div class="icon">📊</div>
-                    <div>Voir mes transactions</div>
                 </a>
             </div>
         </div>
@@ -442,7 +525,7 @@
         if (!token) {
             window.location.href = 'index.html';
         }
-// Récupérer le token et vérifier sa validité avant d'initialiser le WebSocket
+// Initialise la connexion WebSocket et s'authentifie pour recevoir les notifications en temps réel.
         function initWebSocket() {
             socket = io('http://localhost:3000');
             
@@ -470,6 +553,7 @@
             });
         }
 
+// Récupère le nombre de notifications non lues et met à jour le badge dans la barre de navigation.
         async function chargerNotifications() {
             try {
                 const response = await fetch(`${API_URL}/notifications/non-lues/count`, {
@@ -492,6 +576,7 @@
             }
         }
 
+// Charge le profil utilisateur, les comptes bancaires et la carte de crédit pour afficher le tableau de bord.
        async function chargerDashboard() {
     try {
         // ✅ Vérifier le statut réel du compte côté serveur
@@ -526,6 +611,7 @@
     }
 }
 
+// Charge et affiche la liste des comptes bancaires de l'utilisateur dans la grille du tableau de bord.
         async function chargerComptes() {
     try {
         const response = await fetch(`${API_URL}/comptes/mes-comptes`, {
@@ -577,6 +663,7 @@
     }
 }
 
+// Charge et affiche les 100 dernières transactions d'un compte dans une modale.
 async function afficherHistorique(compteId, numeroCompte, typeCompte) {
     try {
         const response = await fetch(`${API_URL}/comptes/${compteId}/transactions`, {
@@ -601,9 +688,9 @@ async function afficherHistorique(compteId, numeroCompte, typeCompte) {
             data.transactions.forEach(transaction => {
                 const tr = document.createElement('tr');
 
-                // ✅ Correction : Parser la date correctement
-                const date = new Date(transaction.date);
-                const dateFormatee = !isNaN(date.getTime()) 
+                // Parser la date — le modèle retourne cree_le
+                const date = new Date(transaction.cree_le || transaction.date);
+                const dateFormatee = !isNaN(date.getTime())
                     ? date.toLocaleDateString('fr-CA', {
                         year: 'numeric',
                         month: 'short',
@@ -613,25 +700,36 @@ async function afficherHistorique(compteId, numeroCompte, typeCompte) {
                     })
                     : 'Date inconnue';
 
-                // ✅ Correction : Labels de types de transaction
-                const typeLabels = {
-                    'deposit': 'Dépôt',
-                    'withdrawal': 'Retrait',
-                    'transfer': 'Transfert',
-                    'loan_disbursement': 'Prêt reçu',
-                    'payment': 'Paiement',
-                    'interest': 'Intérêts'
+                // Labels — le modèle retourne type_transaction
+                const typeKey = transaction.type_transaction || transaction.type || '';
+                const txLabels = {
+                    'deposit':          'Dépôt',
+                    'withdrawal':       'Retrait',
+                    'transfer':         'Virement',
+                    'fee':              'Frais',
+                    'loan_disbursement':'Prêt reçu',
+                    'payment':          'Paiement',
+                    'interest':         'Intérêts'
                 };
+                const typeLabel = txLabels[typeKey] || typeKey;
 
-                const typeLabel = typeLabels[transaction.type] || transaction.type;
+                // Crédit = entrée d'argent :
+                // - deposit, loan_disbursement, interest toujours +
+                // - transfer : + si description contient "reçu", - sinon
+                // - fee, withdrawal, payment toujours -
+                let isCredit;
+                if (['deposit', 'loan_disbursement', 'interest'].includes(typeKey)) {
+                    isCredit = true;
+                } else if (typeKey === 'transfer') {
+                    isCredit = (transaction.description || '').toLowerCase().includes('reçu');
+                } else {
+                    isCredit = false;
+                }
 
-                // ✅ Correction : Déterminer si c'est un crédit ou débit
-                const isCredit = ['deposit', 'loan_disbursement', 'interest', 'transfer_in'].includes(transaction.type);
-                const montantClass = isCredit ? 'transaction-credit' : 'transaction-debit';
+                const montantClass  = isCredit ? 'transaction-credit' : 'transaction-debit';
                 const montantPrefix = isCredit ? '+' : '-';
 
-                // ✅ Correction : Montant absolu
-                const montant = Math.abs(parseFloat(transaction.montant || 0));
+                const montant   = Math.abs(parseFloat(transaction.montant || 0));
                 const soldeApres = parseFloat(transaction.solde_apres || 0);
 
                 tr.innerHTML = `
@@ -674,10 +772,12 @@ async function afficherHistorique(compteId, numeroCompte, typeCompte) {
     }
 }
 
+// Ferme la modale d'historique de transactions.
 function fermerModalHistorique() {
     document.getElementById('modalHistorique').classList.remove('active');
 }
 
+// Charge et affiche les informations de la carte de crédit de l'utilisateur si elle existe.
         async function chargerCarteCredit() {
             try {
                 const response = await fetch(`${API_URL}/cartes/mes-cartes`, {
@@ -731,6 +831,7 @@ function fermerModalHistorique() {
             }
         }
 
+// Formate un nombre en devise canadienne (CAD).
         function formatMontant(montant) {
             return new Intl.NumberFormat('fr-CA', {
                 style: 'currency',
@@ -738,6 +839,7 @@ function fermerModalHistorique() {
             }).format(montant);
         }
 
+// Déconnecte l'utilisateur en supprimant le token, ferme le WebSocket et redirige vers la connexion.
         function deconnexion() {
             if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
                 localStorage.removeItem('token');
