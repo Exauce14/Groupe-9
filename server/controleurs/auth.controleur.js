@@ -5,7 +5,8 @@ const verificationModel = require('../modeles/verification.modele');
 const emailUtils = require('../utilitaires/email.utils');
 const { query } = require('../config/baseDeDonnees');
 
-// Inscription
+// Crée un nouveau compte utilisateur avec statut "pending" en attente d'approbation admin.
+// Le mot de passe est haché avant d'être enregistré en base de données.
 exports.inscription = async (req, res, next) => {
   try {
     const {
@@ -66,7 +67,10 @@ exports.inscription = async (req, res, next) => {
   }
 };
 
-// Connexion
+// Authentifie un utilisateur avec email et mot de passe.
+// Vérifie le verrouillage du compte, valide le mot de passe avec bcrypt,
+// vérifie le statut du compte, puis génère et envoie un code 2FA par email.
+// Bloque le compte après 3 tentatives échouées pendant 15 minutes.
 exports.connexion = async (req, res, next) => {
   try {
     const { email, motDePasse } = req.body;
@@ -179,7 +183,7 @@ exports.connexion = async (req, res, next) => {
     await verificationModel.creer({
       utilisateurId: user.id,
       code: code2FA,
-      type: '2fa'
+      type: '2fa_login'
     });
 
     // Envoyer l'email avec le code
@@ -201,7 +205,9 @@ exports.connexion = async (req, res, next) => {
   }
 };
 
-// Vérifier le code 2FA
+// Vérifie le code 2FA soumis par l'utilisateur après la connexion.
+// Si le code est valide et non expiré, génère un token JWT valide 24h
+// contenant les informations de l'utilisateur (id, email, rôle, statut).
 exports.verifier2FA = async (req, res, next) => {
   try {
     const { userId, code } = req.body;
@@ -212,7 +218,7 @@ exports.verifier2FA = async (req, res, next) => {
     console.log('User ID:', userId);
     console.log('Code reçu:', code);
 
-    const codeValide = await verificationModel.trouverCodeValide(userId, code, '2fa');
+    const codeValide = await verificationModel.trouverCodeValide(userId, code, '2fa_login');
 
     if (!codeValide) {
       console.log('❌ Code invalide ou expiré');
@@ -271,18 +277,20 @@ exports.verifier2FA = async (req, res, next) => {
   }
 };
 
-// Renvoyer le code 2FA
+// Invalide tous les codes 2FA précédents de l'utilisateur,
+// génère un nouveau code, et le renvoie par email.
+// Utilisé quand l'utilisateur demande un renvoi du code.
 exports.renvoyerCode2FA = async (req, res, next) => {
   try {
     const { userId } = req.body;
 
-    await verificationModel.invaliderCodesUtilisateur(userId, '2fa');
+    await verificationModel.invaliderCodesUtilisateur(userId, '2fa_login');
 
     const nouveauCode = verificationModel.genererCode();
     await verificationModel.creer({
       utilisateurId: userId,
       code: nouveauCode,
-      type: '2fa'
+      type: '2fa_login'
     });
 
     const utilisateur = await query(
@@ -302,6 +310,143 @@ exports.renvoyerCode2FA = async (req, res, next) => {
     });
   } catch (error) {
     console.error('Erreur renvoi code 2FA:', error);
+    next(error);
+  }
+};
+
+exports.motDePasseOublie = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        succes: false,
+        message: 'L adresse courriel est requise.'
+      });
+    }
+
+    const utilisateur = await utilisateurModel.trouverParEmail(email);
+    if (!utilisateur) {
+      return res.status(404).json({
+        succes: false,
+        message: 'Aucun compte n est associe a cette adresse courriel.'
+      });
+    }
+
+    await verificationModel.invaliderCodesUtilisateur(utilisateur.id, 'password_reset');
+
+    const code = verificationModel.genererCode();
+    await verificationModel.creer({
+      utilisateurId: utilisateur.id,
+      code,
+      type: 'password_reset'
+    });
+
+    await emailUtils.envoyerEmailResetMotDePasse(utilisateur.email, utilisateur.first_name, code);
+
+    res.json({
+      succes: true,
+      message: 'Un code de reinitialisation a ete envoye par courriel.'
+    });
+  } catch (error) {
+    console.error('Erreur mot de passe oublie:', error);
+    next(error);
+  }
+};
+
+exports.reinitialiserMotDePasse = async (req, res, next) => {
+  try {
+    const { email, code, nouveauMotDePasse, confirmerNouveauMotDePasse } = req.body;
+
+    if (!email || !code || !nouveauMotDePasse || !confirmerNouveauMotDePasse) {
+      return res.status(400).json({
+        succes: false,
+        message: 'Tous les champs sont requis.'
+      });
+    }
+
+    if (nouveauMotDePasse !== confirmerNouveauMotDePasse) {
+      return res.status(400).json({
+        succes: false,
+        message: 'Les mots de passe ne correspondent pas.'
+      });
+    }
+
+    const utilisateur = await utilisateurModel.trouverParEmail(email);
+    if (!utilisateur) {
+      return res.status(404).json({
+        succes: false,
+        message: 'Aucun compte n est associe a cette adresse courriel.'
+      });
+    }
+
+    const codeValide = await verificationModel.trouverCodeValide(utilisateur.id, code, 'password_reset');
+    if (!codeValide) {
+      return res.status(401).json({
+        succes: false,
+        message: 'Code invalide ou expire.'
+      });
+    }
+
+    const motDePasseHash = await bcrypt.hash(nouveauMotDePasse, 10);
+    await utilisateurModel.mettreAJourMotDePasseParId(utilisateur.id, motDePasseHash);
+    await verificationModel.marquerUtilise(codeValide.id);
+    await emailUtils.envoyerEmailConfirmationReinitialisationMotDePasse(utilisateur.email, utilisateur.first_name);
+
+    res.json({
+      succes: true,
+      message: 'Mot de passe reinitialise avec succes.'
+    });
+  } catch (error) {
+    console.error('Erreur reinitialisation mot de passe:', error);
+    next(error);
+  }
+};
+
+exports.changerMotDePasse = async (req, res, next) => {
+  try {
+    const { actuelMotDePasse, nouveauMotDePasse, confirmerNouveauMotDePasse } = req.body;
+
+    if (!actuelMotDePasse || !nouveauMotDePasse || !confirmerNouveauMotDePasse) {
+      return res.status(400).json({
+        succes: false,
+        message: 'Tous les champs sont requis.'
+      });
+    }
+
+    if (nouveauMotDePasse !== confirmerNouveauMotDePasse) {
+      return res.status(400).json({
+        succes: false,
+        message: 'Les nouveaux mots de passe ne correspondent pas.'
+      });
+    }
+
+    const utilisateur = await utilisateurModel.trouverParId(req.user.id);
+    if (!utilisateur) {
+      return res.status(404).json({
+        succes: false,
+        message: 'Utilisateur non trouvé.'
+      });
+    }
+
+    const motDePasseValide = await bcrypt.compare(actuelMotDePasse, utilisateur.password);
+    if (!motDePasseValide) {
+      return res.status(401).json({
+        succes: false,
+        message: 'Mot de passe actuel incorrect.'
+      });
+    }
+
+    const motDePasseHash = await bcrypt.hash(nouveauMotDePasse, 10);
+    await utilisateurModel.mettreAJourMotDePasseParId(utilisateur.id, motDePasseHash);
+    await emailUtils.envoyerEmailConfirmationChangementMotDePasse(utilisateur.email, utilisateur.first_name);
+
+    res.json({
+      succes: true,
+      message: 'Mot de passe mis a jour avec succes.'
+    });
+  } catch (error) {
+    console.error('Erreur changement mot de passe:', error);
     next(error);
   }
 };

@@ -21,7 +21,6 @@ if (MODE_DEV) {
   };
 } else {
   // Configuration SMTP réelle avec Gmail
-  console.log('✅ MODE PRODUCTION : Emails envoyés via Gmail');
   transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -31,7 +30,8 @@ if (MODE_DEV) {
   });
 }
 
-// Template HTML de base
+// Génère le template HTML commun pour tous les emails Fortivia Bank.
+// Accepte un titre, un contenu HTML personnalisé et optionnellement un bouton d'action.
 const getEmailTemplate = (title, content, buttonText = null, buttonLink = null) => {
   return `
     <!DOCTYPE html>
@@ -214,7 +214,8 @@ const getEmailTemplate = (title, content, buttonText = null, buttonLink = null) 
   `;
 };
 
-// Envoyer code 2FA
+// Envoie le code de vérification 2FA à l'utilisateur par email.
+// En mode développement, affiche le code dans la console au lieu d'envoyer un vrai email.
 exports.envoyerCode2FA = async (email, prenom, code) => {
   const content = `
     <h2>Bonjour ${prenom},</h2>
@@ -249,7 +250,98 @@ exports.envoyerCode2FA = async (email, prenom, code) => {
   }
 };
 
-// Demande approuvée
+exports.envoyerEmailResetMotDePasse = async (email, prenom, code) => {
+  const content = `
+    <h2>Bonjour ${prenom},</h2>
+    <p>Une demande de réinitialisation de mot de passe a été initiée pour votre compte.</p>
+    <p>Utilisez le code suivant pour réinitialiser votre mot de passe :</p>
+    <div class="code-box">
+        <div class="code">${code}</div>
+    </div>
+    <p>Ce code est valide pendant 10 minutes. Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>
+  `;
+
+  const mailOptions = {
+    from: `"Fortivia Bank" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: '🔑 Réinitialisation de mot de passe - Fortivia Bank',
+    html: getEmailTemplate('Réinitialisation de mot de passe', content)
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Email de réinitialisation envoyé à:', email);
+    console.log(`📧 CODE RESET : ${code}`);
+  } catch (error) {
+    console.error('❌ Erreur envoi email de réinitialisation:', error);
+    if (MODE_DEV) {
+      console.log('⚠️ Erreur ignorée en mode développement');
+      console.log(`📧 CODE RESET MANUEL : ${code}`);
+    } else {
+      throw error;
+    }
+  }
+};
+
+exports.envoyerEmailConfirmationReinitialisationMotDePasse = async (email, prenom) => {
+  const content = `
+    <h2>Bonjour ${prenom},</h2>
+    <div class="success-box">
+        <p><strong>Votre mot de passe a été réinitialisé avec succès.</strong></p>
+    </div>
+    <p>Si vous n'êtes pas à l'origine de cette modification, contactez immédiatement notre service client.</p>
+  `;
+
+  const mailOptions = {
+    from: `"Fortivia Bank" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: '✅ Mot de passe réinitialisé - Fortivia Bank',
+    html: getEmailTemplate('Mot de passe réinitialisé', content)
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Email de confirmation de réinitialisation envoyé à:', email);
+  } catch (error) {
+    console.error('❌ Erreur envoi email de confirmation de réinitialisation:', error);
+    if (MODE_DEV) {
+      console.log('⚠️ Erreur ignorée en mode développement');
+    } else {
+      throw error;
+    }
+  }
+};
+
+exports.envoyerEmailConfirmationChangementMotDePasse = async (email, prenom) => {
+  const content = `
+    <h2>Bonjour ${prenom},</h2>
+    <div class="success-box">
+        <p><strong>Votre mot de passe a été modifié avec succès.</strong></p>
+    </div>
+    <p>Si vous n'êtes pas à l'origine de cette modification, contactez immédiatement notre service client.</p>
+  `;
+
+  const mailOptions = {
+    from: `"Fortivia Bank" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: '✅ Mot de passe modifié - Fortivia Bank',
+    html: getEmailTemplate('Mot de passe modifié', content)
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Email de confirmation de changement de mot de passe envoyé à:', email);
+  } catch (error) {
+    console.error('❌ Erreur envoi email de confirmation de changement de mot de passe:', error);
+    if (MODE_DEV) {
+      console.log('⚠️ Erreur ignorée en mode développement');
+    } else {
+      throw error;
+    }
+  }
+};
+
+// Envoie un email de confirmation à l'utilisateur lorsque sa demande (inscription, prêt, carte, etc.) est approuvée.
 exports.envoyerEmailDemandeApprouvee = async (email, prenom, typeDemande) => {
   const typeLabels = {
     'Compte Chèques': 'inscription',
@@ -302,7 +394,7 @@ exports.envoyerEmailDemandeApprouvee = async (email, prenom, typeDemande) => {
   }
 };
 
-// Demande rejetée
+// Envoie un email à l'utilisateur pour l'informer que sa demande a été refusée, avec la raison fournie par l'admin.
 exports.envoyerEmailDemandeRejetee = async (email, prenom, typeDemande, raison) => {
   const typeLabels = {
     'Compte Chèques': 'inscription',
@@ -352,7 +444,7 @@ exports.envoyerEmailDemandeRejetee = async (email, prenom, typeDemande, raison) 
   }
 };
 
-// Compte suspendu
+// Envoie un email d'alerte à l'utilisateur dont le compte vient d'être suspendu par un administrateur.
 exports.envoyerEmailCompteSuspendu = async (email, prenom, raison) => {
   const content = `
     <h2>Bonjour ${prenom},</h2>
@@ -395,7 +487,7 @@ exports.envoyerEmailCompteSuspendu = async (email, prenom, raison) => {
   }
 };
 
-// Compte réactivé
+// Envoie un email de confirmation à l'utilisateur dont le compte vient d'être réactivé par un administrateur.
 exports.envoyerEmailCompteReactive = async (email, prenom) => {
   const content = `
     <h2>Bonne nouvelle ${prenom} ! 🎉</h2>

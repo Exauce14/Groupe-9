@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mot de passe oublié - Fortivia Bank</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 520px;
+            background: white;
+            border-radius: 22px;
+            padding: 40px;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+        }
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 12px;
+        }
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+        .form-group input {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+        }
+        .btn {
+            width: 100%;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 700;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        .link-row {
+            margin-top: 18px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .link-row a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .message {
+            padding: 16px 18px;
+            border-radius: 14px;
+            margin-bottom: 18px;
+            display: none;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .message.error { background: #fee2e2; color: #991b1b; }
+        .message.success { background: #ecfdf5; color: #03543f; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">Mot de passe oublié</div>
+        <div class="subtitle">Entrez l'adresse email de votre compte pour recevoir un code de réinitialisation.</div>
+
+        <div id="alertMessage" class="message"></div>
+
+        <form id="requestCodeForm">
+            <div class="form-group">
+                <label for="email">Adresse email</label>
+                <input type="email" id="email" required placeholder="vous@exemple.com">
+            </div>
+            <button type="submit" class="btn">Recevoir le code</button>
+        </form>
+
+        <form id="resetForm" class="hidden">
+            <div class="form-group">
+                <label for="resetCode">Code reçu</label>
+                <input type="text" id="resetCode" required placeholder="482917" maxlength="6">
+            </div>
+            <div class="form-group">
+                <label for="newPassword">Nouveau mot de passe</label>
+                <input type="password" id="newPassword" required placeholder="••••••••••••">
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">Confirmer le mot de passe</label>
+                <input type="password" id="confirmPassword" required placeholder="••••••••••••">
+            </div>
+            <button type="submit" class="btn">Réinitialiser mon mot de passe</button>
+        </form>
+
+        <div class="link-row">
+            <a href="index.html">Retour à la connexion</a>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        const alertMessage = document.getElementById('alertMessage');
+        const requestCodeForm = document.getElementById('requestCodeForm');
+        const resetForm = document.getElementById('resetForm');
+
+        function showMessage(text, type = 'error') {
+            alertMessage.textContent = text;
+            alertMessage.className = `message ${type}`;
+            alertMessage.style.display = 'block';
+        }
+
+        function hideMessage() {
+            alertMessage.style.display = 'none';
+        }
+
+        requestCodeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideMessage();
+
+            const email = document.getElementById('email').value.trim();
+            if (!email) {
+                showMessage('Veuillez entrer votre adresse email.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/mot-de-passe-oublie`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (data.succes) {
+                    showMessage('Un code de réinitialisation a été envoyé par email.', 'success');
+                    requestCodeForm.classList.add('hidden');
+                    resetForm.classList.remove('hidden');
+                } else {
+                    showMessage(data.message || 'Impossible d envoyer le code.');
+                }
+            } catch (error) {
+                console.error(error);
+                showMessage('Erreur de communication avec le serveur.');
+            }
+        });
+
+        resetForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideMessage();
+
+            const email = document.getElementById('email').value.trim();
+            const code = document.getElementById('resetCode').value.trim();
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!code || !newPassword || !confirmPassword) {
+                showMessage('Veuillez remplir tous les champs.');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showMessage('Les mots de passe ne correspondent pas.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/reinitialiser-mot-de-passe`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, code, nouveauMotDePasse: newPassword, confirmerNouveauMotDePasse: confirmPassword })
+                });
+
+                const data = await response.json();
+
+                if (data.succes) {
+                    showMessage('Mot de passe réinitialisé avec succès.', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                } else {
+                    showMessage(data.message || 'Impossible de réinitialiser le mot de passe.');
+                }
+            } catch (error) {
+                console.error(error);
+                showMessage('Erreur de communication avec le serveur.');
+            }
+        });
+    </script>
+</body>
+</html>
