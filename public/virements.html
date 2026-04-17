@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virements - Fortivia Bank</title>
+    <link rel="stylesheet" href="css/custom-select-compte.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 40px; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .navbar-brand { display: flex; align-items: center; gap: 12px; color: white; text-decoration: none; }
+        .navbar-brand .logo { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .navbar-brand span { font-size: 20px; font-weight: 700; }
+        .navbar-menu { display: flex; gap: 8px; align-items: center; }
+        .navbar-menu a { text-decoration: none; color: white; padding: 10px 20px; border-radius: 8px; transition: all 0.2s; font-weight: 500; font-size: 14px; }
+        .navbar-menu a:hover { background: rgba(255,255,255,0.15); }
+        .btn-logout { background: rgba(255,255,255,0.2); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+
+        .container { max-width: 900px; margin: 32px auto; padding: 0 20px; }
+
+        .page-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 16px; margin-bottom: 30px; }
+        .page-header h1 { font-size: 26px; margin-bottom: 6px; }
+        .page-header p { opacity: 0.85; font-size: 14px; }
+
+        .card { background: white; border-radius: 16px; padding: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+        .card h2 { font-size: 20px; color: #1f2937; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .card h2::before { content: ''; width: 4px; height: 22px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 2px; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 6px; font-size: 14px; }
+        .form-group select, .form-group input, .form-group textarea {
+            width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 10px;
+            font-size: 15px; transition: border-color 0.2s; background: white; color: #1f2937;
+        }
+        .form-group select:focus, .form-group input:focus { outline: none; border-color: #667eea; }
+        .form-group .hint { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+
+        .frais-info { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; font-size: 14px; color: #92400e; display: none; }
+        .frais-info strong { display: block; margin-bottom: 4px; }
+
+        .btn { padding: 14px 28px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; width: 100%; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+
+        .alert { padding: 14px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 14px; }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+
+        .info-card { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
+        .info-card h3 { color: #1e40af; font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+        .info-card ul { color: #1e40af; font-size: 13px; padding-left: 16px; }
+        .info-card ul li { margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="tableau-bord.html" class="navbar-brand">
+        <div class="logo">🏦</div>
+        <span>Fortivia Bank</span>
+    </a>
+    <div class="navbar-menu">
+        <a href="tableau-bord.html">🏠 Accueil</a>
+        <a href="virements.html" class="active">↔️ Virements</a>
+        <button class="btn-logout" onclick="deconnexion()">Déconnexion</button>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-header">
+        <h1>↔️ Virement entre mes comptes</h1>
+        <p>Transférez des fonds entre vos comptes Fortivia Bank</p>
+    </div>
+
+    <div class="info-card">
+        <h3>ℹ️ Frais de virement</h3>
+        <ul>
+            <li>Chèques → Épargne : <strong>Gratuit</strong></li>
+            <li>Épargne → Chèques : <strong>Gratuit</strong></li>
+            <li>Crédit → Chèques / Épargne : <strong>Frais d'avance de fonds (3%, min 3,50 $)</strong></li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>Nouveau virement</h2>
+
+        <div id="alertVirement" class="alert" style="display:none;"></div>
+
+        <div class="form-group">
+            <label>Compte source</label>
+            <div class="custom-select-compte" id="compteSource"></div>
+        </div>
+
+        <div class="form-group">
+            <label>Compte destination</label>
+            <div class="custom-select-compte" id="compteDestination"></div>
+        </div>
+
+        <div class="form-group">
+            <label>Montant (CAD)</label>
+            <input type="number" id="montant" min="0.01" step="0.01" placeholder="0.00" oninput="calculerFrais()">
+        </div>
+
+        <div id="fraisInfo" class="frais-info">
+            <strong>⚠️ Frais d'avance de fonds (retrait de crédit)</strong>
+            <span id="fraisTexte"></span>
+        </div>
+
+        <div class="form-group">
+            <label>Description (optionnel)</label>
+            <input type="text" id="description" placeholder="Ex: épargne mensuelle">
+        </div>
+
+        <button class="btn btn-primary" onclick="soumettre()">Effectuer le virement</button>
+    </div>
+</div>
+
+<script src="js/auth-check.js"></script>
+<script src="js/custom-select-compte.js"></script>
+<script>
+const API_URL = 'http://localhost:3000/api';
+const token = localStorage.getItem('token');
+let comptes = [];
+
+if (!token) window.location.href = 'index.html';
+
+const typeLabels = { checking: 'Compte Chèques', savings: 'Compte Épargne', credit: 'Carte de Crédit', investment: 'Compte Placement' };
+
+// Charge les comptes éligibles au virement (chèques, épargne, crédit) et initialise les deux sélecteurs.
+async function chargerComptes() {
+    const res = await fetch(`${API_URL}/comptes/mes-comptes`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    if (!data.succes) return;
+
+    comptes = data.comptes.filter(c => ['checking', 'savings', 'credit'].includes(c.type_compte));
+    creerSelectCompte('compteSource', comptes, typeLabels, () => calculerFrais());
+    creerSelectCompte('compteDestination', comptes, typeLabels, null);
+}
+
+// Calcule et affiche les frais d'avance de fonds si le compte source est une carte de crédit.
+function calculerFrais() {
+    const src = document.getElementById('compteSource');
+    const type = src._selectedType;
+    const montant = parseFloat(document.getElementById('montant').value) || 0;
+    const fraisInfo = document.getElementById('fraisInfo');
+
+    if (type === 'credit' && montant > 0) {
+        const frais = Math.max(montant * 0.03, 3.50);
+        document.getElementById('fraisTexte').textContent = `Frais estimés : ${formatMontant(frais)} (3%, min 3,50 $). Total débité : ${formatMontant(montant + frais)}`;
+        fraisInfo.style.display = 'block';
+    } else {
+        fraisInfo.style.display = 'none';
+    }
+}
+
+// Soumet le virement interne : valide les champs, envoie la requête à l'API et affiche le résultat.
+async function soumettre() {
+    const compteSourceId      = document.getElementById('compteSource')._selectedId;
+    const compteDestinationId = document.getElementById('compteDestination')._selectedId;
+    const montant = parseFloat(document.getElementById('montant').value);
+    const description = document.getElementById('description').value.trim();
+
+    if (!compteSourceId || !compteDestinationId) return afficherAlerte('Veuillez sélectionner les deux comptes.', 'error');
+    if (compteSourceId === compteDestinationId) return afficherAlerte('Les comptes source et destination doivent être différents.', 'error');
+    if (!montant || montant <= 0) return afficherAlerte('Montant invalide.', 'error');
+
+    const res = await fetch(`${API_URL}/transactions/virement-interne`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ compteSourceId, compteDestinationId, montant, description })
+    });
+    const data = await res.json();
+
+    if (data.succes) {
+        afficherAlerte(`Virement effectué avec succès !${data.frais ? ' Frais : ' + formatMontant(data.frais) : ''}`, 'success');
+        document.getElementById('montant').value = '';
+        document.getElementById('description').value = '';
+        document.getElementById('fraisInfo').style.display = 'none';
+        chargerComptes();
+    } else {
+        afficherAlerte(data.message, 'error');
+    }
+}
+
+function afficherAlerte(msg, type) {
+    const el = document.getElementById('alertVirement');
+    el.className = `alert alert-${type}`;
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 6000);
+}
+
+function formatMontant(n) {
+    return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(n);
+}
+
+function deconnexion() {
+    if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
+        localStorage.removeItem('token');
+        window.location.href = 'index.html';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    chargerComptes();
+    // Touche Enter sur les champs du formulaire
+    ['montant', 'description'].forEach(id => {
+        document.getElementById(id).addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); soumettre(); }
+        });
+    });
+});
+</script>
+</body>
+</html>

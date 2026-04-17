@@ -1,0 +1,139 @@
+/* Dropdown personnalisé pour la sélection de comptes bancaires */
+
+.custom-select-compte {
+    position: relative;
+    width: 100%;
+}
+
+.csc-trigger {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    min-height: 54px;
+    transition: border-color 0.2s;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.custom-select-compte.csc-open .csc-trigger,
+.csc-trigger:hover {
+    border-color: #667eea;
+}
+
+.csc-placeholder {
+    color: #9ca3af;
+    font-size: 15px;
+    flex: 1;
+}
+
+.csc-chevron {
+    font-size: 11px;
+    color: #6b7280;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.custom-select-compte.csc-open .csc-chevron {
+    transform: rotate(180deg);
+}
+
+.csc-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex: 1;
+    min-width: 0;
+}
+
+.csc-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.csc-num {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+    letter-spacing: 0.02em;
+}
+
+.csc-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.csc-balance {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f2937;
+    white-space: nowrap;
+}
+
+/* Dropdown list */
+.csc-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% - 2px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #667eea;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    z-index: 999;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.custom-select-compte.csc-open .csc-dropdown {
+    display: block;
+}
+
+.custom-select-compte.csc-open .csc-trigger {
+    border-radius: 10px 10px 0 0;
+    border-bottom-color: #667eea;
+}
+
+.csc-option {
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.15s;
+}
+
+.csc-option:last-child {
+    border-bottom: none;
+}
+
+.csc-option:hover {
+    background: #f5f3ff;
+}
+
+.csc-option .csc-balance {
+    font-size: 14px;
+}
+
+.csc-empty {
+    padding: 16px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+}
