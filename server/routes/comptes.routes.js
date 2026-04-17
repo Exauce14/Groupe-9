@@ -29,7 +29,7 @@ router.get('/:compteId/transactions', async (req, res, next) => {
       });
     }
 
-    // ✅ Récupérer les transactions avec tous les champs nécessaires
+    //  Récupérer les transactions avec tous les champs nécessaires
     const transactions = await query(
       `SELECT 
         id,

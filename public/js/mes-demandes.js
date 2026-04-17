@@ -18,7 +18,7 @@ try {
     window.location.href = 'index.html';
 }
 
-// Charger les données au démarrage
+// Initialise la page en chargeant les demandes, les comptes et les cartes, puis vérifie les disponibilités.
 async function initialiser() {
     await Promise.all([
         chargerDemandes(),
@@ -28,7 +28,7 @@ async function initialiser() {
     verifierDisponibilitesDemandes();
 }
 
-// Charger les comptes existants
+// Charge la liste des comptes bancaires existants de l'utilisateur pour la vérification des disponibilités.
 async function chargerComptesExistants() {
     try {
         const response = await fetch(`${API_URL}/comptes/mes-comptes`, {
@@ -43,7 +43,7 @@ async function chargerComptesExistants() {
     }
 }
 
-// Charger les cartes existantes
+// Charge la liste des cartes bancaires existantes de l'utilisateur pour la vérification des disponibilités.
 async function chargerCartesExistantes() {
     try {
         const response = await fetch(`${API_URL}/cartes/mes-cartes`, {
@@ -58,7 +58,7 @@ async function chargerCartesExistantes() {
     }
 }
 
-// Vérifier quelles demandes sont disponibles
+// Vérifie quelles demandes sont déjà actives ou en cours et désactive les boutons correspondants.
 function verifierDisponibilitesDemandes() {
     // Compte Épargne : 1 seul autorisé
     const aCompteEpargne = comptesExistants.some(c => c.type_compte === 'savings');
@@ -97,7 +97,7 @@ function verifierDisponibilitesDemandes() {
     // Prêts : Toujours disponibles (pas de limite)
 }
 
-// Désactiver une carte de demande
+// Désactive visuellement le bouton d'une demande indisponible et affiche la raison.
 function desactiverCarte(type, raison) {
     const cartes = {
         'epargne': document.querySelector('[onclick="ouvrirModalCompteEpargne()"]'),
@@ -118,7 +118,7 @@ function desactiverCarte(type, raison) {
     }
 }
 
-// Charger les demandes
+// Charge et affiche la liste des demandes soumises par l'utilisateur avec leur statut.
 async function chargerDemandes() {
     try {
         const response = await fetch(`${API_URL}/demandes/mes-demandes`, {
@@ -186,38 +186,42 @@ async function chargerDemandes() {
     }
 }
 
-// Ouvrir modals
+// Ouvre la modale de demande d'ouverture de compte épargne et réinitialise le formulaire.
 function ouvrirModalCompteEpargne() {
     document.getElementById('modalCompteEpargne').classList.add('active');
     document.getElementById('formCompteEpargne').reset();
     document.getElementById('alertEpargne').style.display = 'none';
 }
 
+// Ouvre la modale de demande d'ouverture de compte de placement et réinitialise le formulaire.
 function ouvrirModalComptePlacement() {
     document.getElementById('modalComptePlacement').classList.add('active');
     document.getElementById('formComptePlacement').reset();
     document.getElementById('alertPlacement').style.display = 'none';
 }
 
+// Ouvre la modale de demande de carte de crédit et réinitialise le formulaire.
 function ouvrirModalCarteCredit() {
     document.getElementById('modalCarteCredit').classList.add('active');
     document.getElementById('formCarteCredit').reset();
     document.getElementById('alertCredit').style.display = 'none';
 }
 
+// Ouvre la modale de demande de prêt personnel et réinitialise le formulaire.
 function ouvrirModalPretPersonnel() {
     document.getElementById('modalPretPersonnel').classList.add('active');
     document.getElementById('formPretPersonnel').reset();
     document.getElementById('alertPret').style.display = 'none';
 }
 
+// Ouvre la modale de demande de prêt hypothécaire et réinitialise le formulaire.
 function ouvrirModalPretHypothecaire() {
     document.getElementById('modalPretHypothecaire').classList.add('active');
     document.getElementById('formPretHypothecaire').reset();
     document.getElementById('alertHypothecaire').style.display = 'none';
 }
 
-// Fermer modal
+// Ferme la modale identifiée par son id en retirant la classe active.
 function fermerModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
 }
@@ -288,8 +292,8 @@ document.getElementById('formComptePlacement').addEventListener('submit', async 
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                typeDemande: 'investment',
-                typeCompte: typePlacement,
+                typeDemande: 'account_opening',
+                typeCompte: 'investment',
                 montantInitial,
                 justification
             })
@@ -421,7 +425,7 @@ document.getElementById('formPretHypothecaire').addEventListener('submit', async
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                typeDemande: 'mortgage',
+                typeDemande: 'loan',
                 montantDemande: montantHypothecaire,
                 valeurPropriete,
                 justification
@@ -443,7 +447,7 @@ document.getElementById('formPretHypothecaire').addEventListener('submit', async
     }
 });
 
-// Afficher une alerte
+// Affiche un message d'alerte dans l'élément identifié par elementId selon le type (error ou warning).
 function afficherAlerte(elementId, message, type) {
     const alertDiv = document.getElementById(elementId);
     alertDiv.className = type === 'error' ? 'alert alert-error' : 'alert alert-warning';
@@ -451,7 +455,7 @@ function afficherAlerte(elementId, message, type) {
     alertDiv.style.display = 'block';
 }
 
-// Déconnexion
+// Déconnecte l'utilisateur en supprimant le token et redirige vers la page de connexion.
 function deconnexion() {
     if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
         localStorage.removeItem('token');
