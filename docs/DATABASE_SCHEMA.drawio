@@ -1,0 +1,204 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-04-16T12:00:00.000Z" agent="5.0" etag="abc123" version="14.0" type="device">
+  <diagram id="diagram1" name="Database Schema">
+    <mxGraphModel dx="2200" dy="2200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="2200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="users" value="USERS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=12;fontStyle=1;align=center;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="940" y="20" width="320" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="users_fields" value="PK: id\nemail UNIQUE\npassword\nfirst_name\nlast_name\nphone\naddress\ndate_of_birth\ngender\nstatus\nannual_income\nresidence_type\nsin\nrole\naccount_status\nis_active\nemail_verified\nlogin_attempts\nlocked_until\napproved_by\napproved_at\ncreated_at\nupdated_at" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;fontSize=11" vertex="1" parent="users">
+          <mxGeometry y="26" width="320" height="294" as="geometry" />
+        </mxCell>
+
+        <mxCell id="accounts" value="ACCOUNTS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=12;fontStyle=1;align=center;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="520" y="380" width="320" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="accounts_fields" value="PK: id\nFK: user_id → USERS\naccount_number UNIQUE\naccount_type\nbalance\ncredit_limit\ninterest_rate\nstatus\ncreated_at\nupdated_at" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;fontSize=11" vertex="1" parent="accounts">
+          <mxGeometry y="26" width="320" height="214" as="geometry" />
+        </mxCell>
+
+        <mxCell id="transactions" value="TRANSACTIONS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=12;fontStyle=1;align=center;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="940" y="380" width="320" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="transactions_fields" value="PK: id\nFK: account_id → ACCOUNTS\ntransaction_type\namount\nbalance_after\ndescription\nreference_number UNIQUE\ncreated_at\nstatus\napproved_by\napproved_at\nrelated_transaction_id" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;fontSize=11" vertex="1" parent="transactions">
+          <mxGeometry y="26" width="320" height="234" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cards" value="CARDS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=12;fontStyle=1;align=center;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="100" y="660" width="320" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="cards_fields" value="PK: id\nFK: account_id → ACCOUNTS\ncard_number UNIQUE\ncard_type\ncvv\nexpiry_date\ncredit_limit\nstatus\nblocked_reason\navailable_credit\nblocked_at\ncreated_at\nupdated_at" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;fontSize=11" vertex="1" parent="cards">
+          <mxGeometry y="26" width="320" height="234" as="geometry" />
+        </mxCell>
+
+        <mxCell id="verification" value="VERIFICATION_CODES" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=12;fontStyle=1;align=center;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="1360" y="660" width="320" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="verification_fields" value="PK: id\nFK: user_id → USERS\ncode\ntype\nexpires_at\nused\ncreated_at" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;fontSize=11" vertex="1" parent="verification">
+          <mxGeometry y="26" width="320" height="194" as="geometry" />
+        </mxCell>
+
+        <mxCell id="requests" value="REQUESTS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=12;fontStyle=1;align=center;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="1740" y="20" width="320" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="requests_fields" value="PK: id\nFK: user_id → USERS\nrequest_type\naccount_type\ncard_type\nrequested_limit\njustification\nstatus\nreviewed_by → USERS\nreview_comment\nreviewed_at\nrequested_amount\nduration_months\nproperty_value\ncreated_at\nupdated_at" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;fontSize=11" vertex="1" parent="requests">
+          <mxGeometry y="26" width="320" height="294" as="geometry" />
+        </mxCell>
+
+        <mxCell id="notifications" value="NOTIFICATIONS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=12;fontStyle=1;align=center;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="520" y="920" width="320" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="notifications_fields" value="PK: id\nFK: user_id → USERS\ntype\ntitle\nmessage\nread\nlink\ncreated_at" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;fontSize=11" vertex="1" parent="notifications">
+          <mxGeometry y="26" width="320" height="194" as="geometry" />
+        </mxCell>
+
+        <mxCell id="beneficiaries" value="BENEFICIARIES" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d4e6f1;strokeColor=#6c8ebf;strokeWidth=2;fontSize=12;fontStyle=1;align=center;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="940" y="920" width="320" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="beneficiaries_fields" value="PK: id\nFK: user_id → USERS\nname\nemail\nnote\ncreated_at" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;fontSize=11" vertex="1" parent="beneficiaries">
+          <mxGeometry y="26" width="320" height="174" as="geometry" />
+        </mxCell>
+
+        <mxCell id="interac" value="INTERAC_TRANSFERS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d4e6f1;strokeColor=#6c8ebf;strokeWidth=2;fontSize=12;fontStyle=1;align=center;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="1360" y="920" width="320" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="interac_fields" value="PK: id\nFK: sender_id → USERS\nrecipient_email\nFK: recipient_id → USERS (nullable)\nFK: sender_account_id → ACCOUNTS\nFK: deposit_account_id → ACCOUNTS (nullable)\namount\nmessage\nsecurity_question\nsecurity_answer\nstatus\nexpires_at\ncreated_at\ndeposited_at" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;fontSize=11" vertex="1" parent="interac">
+          <mxGeometry y="26" width="320" height="234" as="geometry" />
+        </mxCell>
+
+        <mxCell id="providers" value="PROVIDERS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cbad;strokeColor=#b86f4a;strokeWidth=2;fontSize=12;fontStyle=1;align=center;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="520" y="1160" width="320" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="providers_fields" value="PK: id\nname UNIQUE\ncategory\nenterprise_account_id → ACCOUNTS\nreference_label\nreference_example\nis_default\nis_active\ncreated_at" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;fontSize=11" vertex="1" parent="providers">
+          <mxGeometry y="26" width="320" height="214" as="geometry" />
+        </mxCell>
+
+        <mxCell id="bill_payments" value="BILL_PAYMENTS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cbad;strokeColor=#b86f4a;strokeWidth=2;fontSize=12;fontStyle=1;align=center;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="940" y="1160" width="320" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="bill_fields" value="PK: id\nFK: user_id → USERS\nFK: from_account_id → ACCOUNTS\nFK: provider_id → PROVIDERS\nreference_number\namount\ndescription\nFK: transaction_id → TRANSACTIONS\ncreated_at" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;fontSize=11" vertex="1" parent="bill_payments">
+          <mxGeometry y="26" width="320" height="194" as="geometry" />
+        </mxCell>
+
+        <mxCell id="scheduled" value="SCHEDULED_PAYMENTS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cbad;strokeColor=#b86f4a;strokeWidth=2;fontSize=12;fontStyle=1;align=center;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="1360" y="1160" width="320" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="scheduled_fields" value="PK: id\nFK: user_id → USERS\nFK: from_account_id → ACCOUNTS\nFK: provider_id → PROVIDERS\nto_account_number\nto_user_id → USERS\namount\nfrequency\nday_of_month\nnext_execution_date\nend_date\ndescription\nis_active\ncreated_at\nlast_executed_at" style="text;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=8;fontSize=11" vertex="1" parent="scheduled">
+          <mxGeometry y="26" width="320" height="234" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend" value="Cardinalités : 1-N = One-to-Many, 0-N = Optional Many" style="text;html=1;align=left;verticalAlign=middle;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="520" y="1420" width="1160" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="users_accounts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="users" target="accounts">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_users_accounts" value="1-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="users_accounts">
+          <mxGeometry x="0.45" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="users_verification" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="users" target="verification">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_users_verification" value="1-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="users_verification">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="users_requests" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="users" target="requests">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_users_requests" value="1-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="users_requests">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="users_notifications" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="users" target="notifications">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_users_notifications" value="1-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="users_notifications">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="users_beneficiaries" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="users" target="beneficiaries">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_users_beneficiaries" value="1-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="users_beneficiaries">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="users_interac" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="users" target="interac">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_users_interac" value="1-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="users_interac">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="accounts_cards" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="accounts" target="cards">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_accounts_cards" value="1-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="accounts_cards">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="accounts_transactions" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="accounts" target="transactions">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_accounts_transactions" value="1-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="accounts_transactions">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="accounts_interac" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="accounts" target="interac">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_accounts_interac" value="1-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="accounts_interac">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="accounts_bill" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="accounts" target="bill_payments">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_accounts_bill" value="1-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="accounts_bill">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="accounts_scheduled" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="accounts" target="scheduled">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_accounts_scheduled" value="1-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="accounts_scheduled">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="providers_bill" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="providers" target="bill_payments">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_providers_bill" value="1-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="providers_bill">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="providers_scheduled" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="providers" target="scheduled">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_providers_scheduled" value="0-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="providers_scheduled">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="requests_users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="requests" target="users">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_requests_users" value="0-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="requests_users">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="interac_users_recipient" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2" edge="1" parent="1" source="interac" target="users">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_interac_users_recipient" value="0-N" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=1" connectable="0" vertex="1" parent="interac_users_recipient">
+          <mxGeometry x="0.5" y="0" relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
