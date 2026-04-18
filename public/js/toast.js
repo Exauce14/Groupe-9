@@ -4,8 +4,9 @@
     var container = null;
 
     function showToast(message, type) {
-        if (!container) return;
-        var clean = message.replace(/^[✅❌⚠️🎉📧🔒💳🏦]\s*/, '').trim();
+        if (!container) { pendingToasts.push({ msg: String(message), type: type || detectType(String(message)) }); return; }
+        if (!type) type = detectType(String(message));
+        var clean = String(message).replace(/^[✅❌⚠️🎉📧🔒💳🏦]\s*/, '').trim();
         var icons = { success: '✔', error: '✖', warning: '⚠', info: 'ℹ' };
         var toast = document.createElement('div');
         toast.className = 'toast ' + type;

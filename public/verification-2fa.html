@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script src="js/toast.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vérification 2FA - Fortivia Bank</title>
@@ -239,13 +240,13 @@
                 const data = await response.json();
 
                 if (data.succes) {
-                    alert('✅ Nouveau code envoyé par email !');
+                    showToast('✅ Nouveau code envoyé par email !');
                     codeInputs.forEach(input => input.value = '');
                     codeInputs[0].focus();
                 }
             } catch (error) {
                 console.error('Erreur:', error);
-                alert('❌ Erreur lors de l\'envoi du code');
+                showToast('❌ Erreur lors de l\'envoi du code');
             }
         }
 
@@ -256,6 +257,6 @@
             errorDiv.style.display = 'block';
         }
     </script>
-<script src="js/toast.js"></script>
+
 </body>
 </html>

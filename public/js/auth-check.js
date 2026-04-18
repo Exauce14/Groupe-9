@@ -25,7 +25,7 @@ async function verifierToken() {
 
         if (payload.exp && payload.exp < maintenant) {
             localStorage.removeItem('token');
-            alert('Votre session a expiré. Veuillez vous reconnecter.');
+            showToast('Votre session a expiré. Veuillez vous reconnecter.');
             window.location.href = 'index.html';
             return false;
         }
@@ -77,7 +77,7 @@ async function verifierStatutCompte() {
                 console.log('✅ Compte approuvé ! Rechargement...');
                 
                 // Afficher message de succès
-                alert('🎉 Félicitations ! Votre compte a été approuvé. La page va se recharger.');
+                showToast('🎉 Félicitations ! Votre compte a été approuvé. La page va se recharger.');
                 
                 // Forcer déconnexion et reconnexion pour obtenir le nouveau token
                 localStorage.removeItem('token');
@@ -87,7 +87,7 @@ async function verifierStatutCompte() {
             // Si le compte est suspendu
             if (data.utilisateur.statut_compte === 'suspended') {
                 localStorage.removeItem('token');
-                alert('⚠️ Votre compte a été suspendu. Contactez le support.');
+                showToast('⚠️ Votre compte a été suspendu. Contactez le support.');
                 window.location.href = 'index.html';
             }
         }

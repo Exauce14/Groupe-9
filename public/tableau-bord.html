@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script src="js/toast.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tableau de bord - Fortivia Bank</title>
@@ -542,7 +543,7 @@
                 console.error('Erreur WebSocket:', data.message);
                 if (data.expired) {
                     localStorage.removeItem('token');
-                    alert('Votre session a expiré. Veuillez vous reconnecter.');
+                    showToast('Votre session a expiré. Veuillez vous reconnecter.');
                     window.location.href = 'index.html';
                 }
             });
@@ -768,7 +769,7 @@ async function afficherHistorique(compteId, numeroCompte, typeCompte) {
         document.getElementById('modalHistorique').classList.add('active');
     } catch (error) {
         console.error('Erreur chargement historique:', error);
-        alert('❌ Erreur lors du chargement de l\'historique');
+        showToast('❌ Erreur lors du chargement de l\'historique');
     }
 }
 
@@ -983,6 +984,6 @@ function fermerModalHistorique() {
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 </style>
-<script src="js/toast.js"></script>
+
 </body>
 </html>

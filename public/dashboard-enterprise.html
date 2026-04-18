@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script src="js/toast.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tableau de bord Entreprise - Fortivia Bank</title>
@@ -364,8 +365,8 @@ async function approuver(paiementId) {
             if (paiementsPending.length === 0) afficherPending();
             chargerProfil();
             chargerStatsHistorique();
-        } else alert(data.message || 'Erreur.');
-    } catch (e) { alert('Erreur réseau.'); }
+        } else showToast(data.message || 'Erreur.');
+    } catch (e) { showToast('Erreur réseau.'); }
 }
 
 // Rejette un paiement en attente et rembourse le client sur son compte source.
@@ -382,8 +383,8 @@ async function rejeter(paiementId) {
             document.getElementById('statPending').textContent = paiementsPending.length;
             if (paiementsPending.length === 0) afficherPending();
             chargerStatsHistorique();
-        } else alert(data.message || 'Erreur.');
-    } catch (e) { alert('Erreur réseau.'); }
+        } else showToast(data.message || 'Erreur.');
+    } catch (e) { showToast('Erreur réseau.'); }
 }
 
 // Charge et affiche l'historique complet des paiements dans l'onglet interne.
@@ -638,6 +639,6 @@ document.addEventListener('DOMContentLoaded', () => {
     chargerNotifCount();
 });
 </script>
-<script src="js/toast.js"></script>
+
 </body>
 </html>

@@ -133,7 +133,7 @@ document.getElementById('formBloquer').addEventListener('submit', async function
     const raison = document.getElementById('raisonBlocage').value.trim();
 
     if (!raison) {
-        alert('⚠️ Veuillez indiquer la raison du blocage');
+        showToast('⚠️ Veuillez indiquer la raison du blocage');
         return;
     }
 
@@ -151,14 +151,14 @@ document.getElementById('formBloquer').addEventListener('submit', async function
 
         if (data.succes) {
             fermerModal('modalBloquer');
-            alert('✅ Carte bloquée avec succès !');
+            showToast('✅ Carte bloquée avec succès !');
             chargerCartes();
         } else {
-            alert('❌ Erreur: ' + data.message);
+            showToast('❌ Erreur: ' + data.message);
         }
     } catch (error) {
         console.error('Erreur blocage carte:', error);
-        alert('❌ Erreur lors du blocage de la carte');
+        showToast('❌ Erreur lors du blocage de la carte');
     }
 });
 
@@ -181,14 +181,14 @@ async function confirmerDeblocage() {
 
         if (data.succes) {
             fermerModal('modalDebloquer');
-            alert('✅ Carte débloquée avec succès !');
+            showToast('✅ Carte débloquée avec succès !');
             chargerCartes();
         } else {
-            alert('❌ Erreur: ' + data.message);
+            showToast('❌ Erreur: ' + data.message);
         }
     } catch (error) {
         console.error('Erreur déblocage carte:', error);
-        alert('❌ Erreur lors du déblocage de la carte');
+        showToast('❌ Erreur lors du déblocage de la carte');
     }
 }
 

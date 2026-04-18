@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script src="js/toast.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paiement de factures - Fortivia Bank</title>
@@ -490,7 +491,7 @@ async function annulerPaiement(paiementId) {
     if (data.succes) {
         chargerHistorique();
         chargerComptes();
-    } else alert(data.message || 'Erreur lors de l\'annulation.');
+    } else showToast(data.message || 'Erreur lors de l\'annulation.');
 }
 
 // Charge et affiche la liste des paiements planifiés actifs de l'utilisateur.
@@ -562,6 +563,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
-<script src="js/toast.js"></script>
+
 </body>
 </html>

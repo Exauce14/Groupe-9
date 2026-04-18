@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script src="js/toast.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Virement Interac - Fortivia Bank</title>
@@ -363,7 +364,7 @@ function ouvrirSelectionBanque() {
 // Informe l'utilisateur qu'il ne possède pas de compte dans la banque sélectionnée.
 function banqueExterieure(nom) {
     fermerModal('modalBanque');
-    alert(`❌ Vous ne possédez pas de compte chez ${nom}.`);
+    showToast(`❌ Vous ne possédez pas de compte chez ${nom}.`);
 }
 
 // Sélectionne Fortivia Bank comme institution et ouvre la modale de réponse à la question de sécurité.
@@ -531,7 +532,7 @@ async function annulerVirement(interacId) {
         chargerVirementsEnvoyes();
         chargerComptes();
     } else {
-        alert(data.message || 'Impossible d\'annuler ce virement.');
+        showToast(data.message || 'Impossible d\'annuler ce virement.');
     }
 }
 
@@ -670,6 +671,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
-<script src="js/toast.js"></script>
+
 </body>
 </html>

@@ -255,7 +255,7 @@ document.getElementById('formCompteEpargne').addEventListener('submit', async fu
 
         if (data.succes) {
             fermerModal('modalCompteEpargne');
-            alert('✅ Demande soumise avec succès !');
+            showToast('✅ Demande soumise avec succès !');
             initialiser();
         } else {
             afficherAlerte('alertEpargne', data.message, 'error');
@@ -303,7 +303,7 @@ document.getElementById('formComptePlacement').addEventListener('submit', async 
 
         if (data.succes) {
             fermerModal('modalComptePlacement');
-            alert('✅ Demande soumise avec succès !');
+            showToast('✅ Demande soumise avec succès !');
             initialiser();
         } else {
             afficherAlerte('alertPlacement', data.message, 'error');
@@ -350,7 +350,7 @@ document.getElementById('formCarteCredit').addEventListener('submit', async func
 
         if (data.succes) {
             fermerModal('modalCarteCredit');
-            alert('✅ Demande soumise avec succès !');
+            showToast('✅ Demande soumise avec succès !');
             initialiser();
         } else {
             afficherAlerte('alertCredit', data.message, 'error');
@@ -393,7 +393,7 @@ document.getElementById('formPretPersonnel').addEventListener('submit', async fu
 
         if (data.succes) {
             fermerModal('modalPretPersonnel');
-            alert('✅ Demande soumise avec succès !');
+            showToast('✅ Demande soumise avec succès !');
             initialiser();
         } else {
             afficherAlerte('alertPret', data.message, 'error');
@@ -436,7 +436,7 @@ document.getElementById('formPretHypothecaire').addEventListener('submit', async
 
         if (data.succes) {
             fermerModal('modalPretHypothecaire');
-            alert('✅ Demande soumise avec succès !');
+            showToast('✅ Demande soumise avec succès !');
             initialiser();
         } else {
             afficherAlerte('alertHypothecaire', data.message, 'error');

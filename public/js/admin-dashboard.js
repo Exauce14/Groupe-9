@@ -171,16 +171,16 @@ async function confirmApprove() {
 
         if (data.succes) {
             closeModal('approveModal');
-            alert('✅ Inscription approuvée avec succès !');
+            showToast('✅ Inscription approuvée avec succès !');
             chargerStats();
             chargerInscriptions();
             chargerUtilisateurs();
         } else {
-            alert('❌ Erreur: ' + data.message);
+            showToast('❌ Erreur: ' + data.message);
         }
     } catch (error) {
         console.error('Erreur approbation:', error);
-        alert('❌ Erreur lors de l\'approbation');
+        showToast('❌ Erreur lors de l\'approbation');
     }
 }
 
@@ -198,7 +198,7 @@ document.getElementById('rejectForm').addEventListener('submit', async (e) => {
     const raison = document.getElementById('rejectReason').value.trim();
 
     if (!raison) {
-        alert('⚠️ Veuillez indiquer la raison du rejet');
+        showToast('⚠️ Veuillez indiquer la raison du rejet');
         return;
     }
 
@@ -216,16 +216,16 @@ document.getElementById('rejectForm').addEventListener('submit', async (e) => {
 
         if (data.succes) {
             closeModal('rejectModal');
-            alert('✅ Inscription rejetée');
+            showToast('✅ Inscription rejetée');
             chargerStats();
             chargerInscriptions();
             chargerUtilisateurs();
         } else {
-            alert('❌ Erreur: ' + data.message);
+            showToast('❌ Erreur: ' + data.message);
         }
     } catch (error) {
         console.error('Erreur rejet:', error);
-        alert('❌ Erreur lors du rejet');
+        showToast('❌ Erreur lors du rejet');
     }
 });
 
@@ -328,15 +328,15 @@ document.getElementById('approveDemandeForm').addEventListener('submit', async (
 
         if (data.succes) {
             closeModal('approveDemandeModal');
-            alert('✅ Demande approuvée avec succès !');
+            showToast('✅ Demande approuvée avec succès !');
             chargerStats();
             chargerDemandes();
         } else {
-            alert('❌ Erreur: ' + data.message);
+            showToast('❌ Erreur: ' + data.message);
         }
     } catch (error) {
         console.error('Erreur approbation demande:', error);
-        alert('❌ Erreur lors de l\'approbation');
+        showToast('❌ Erreur lors de l\'approbation');
     }
 });
 
@@ -354,7 +354,7 @@ document.getElementById('rejectDemandeForm').addEventListener('submit', async (e
     const raison = document.getElementById('rejectDemandeReason').value.trim();
 
     if (!raison) {
-        alert('⚠️ Veuillez indiquer la raison du rejet');
+        showToast('⚠️ Veuillez indiquer la raison du rejet');
         return;
     }
 
@@ -372,15 +372,15 @@ document.getElementById('rejectDemandeForm').addEventListener('submit', async (e
 
         if (data.succes) {
             closeModal('rejectDemandeModal');
-            alert('✅ Demande rejetée');
+            showToast('✅ Demande rejetée');
             chargerStats();
             chargerDemandes();
         } else {
-            alert('❌ Erreur: ' + data.message);
+            showToast('❌ Erreur: ' + data.message);
         }
     } catch (error) {
         console.error('Erreur rejet demande:', error);
-        alert('❌ Erreur lors du rejet');
+        showToast('❌ Erreur lors du rejet');
     }
 });
 
@@ -455,7 +455,7 @@ function bloquerUtilisateur(userId, userName) {
     const raison = prompt(`Bloquer le compte de ${userName}.\n\nRaison du blocage :`);
     
     if (!raison || raison.trim().length < 2) {
-        alert('⚠️ Raison requise (minimum 2 caractères)');
+        showToast('⚠️ Raison requise (minimum 2 caractères)');
         return;
     }
 
@@ -474,16 +474,16 @@ function bloquerUtilisateur(userId, userName) {
     .then(res => res.json())
     .then(data => {
         if (data.succes) {
-            alert('✅ Compte bloqué avec succès !');
+            showToast('✅ Compte bloqué avec succès !');
             chargerUtilisateurs();
             chargerStats();
         } else {
-            alert('❌ Erreur: ' + data.message);
+            showToast('❌ Erreur: ' + data.message);
         }
     })
     .catch(error => {
         console.error('Erreur:', error);
-        alert('❌ Erreur lors du blocage');
+        showToast('❌ Erreur lors du blocage');
     });
 }
 
@@ -502,16 +502,16 @@ function debloquerUtilisateur(userId, userName) {
     .then(res => res.json())
     .then(data => {
         if (data.succes) {
-            alert('✅ Compte débloqué avec succès !');
+            showToast('✅ Compte débloqué avec succès !');
             chargerUtilisateurs();
             chargerStats();
         } else {
-            alert('❌ Erreur: ' + data.message);
+            showToast('❌ Erreur: ' + data.message);
         }
     })
     .catch(error => {
         console.error('Erreur:', error);
-        alert('❌ Erreur lors du déblocage');
+        showToast('❌ Erreur lors du déblocage');
     });
 }
 
