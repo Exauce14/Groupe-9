@@ -424,7 +424,7 @@ exports.approuverDemande = async (req, res, next) => {
 
         await query(
           `INSERT INTO transactions (account_id, transaction_type, amount, balance_after, description)
-           VALUES ($1, 'loan_disbursement', $2, $3, $4)`,
+           VALUES ($1, 'deposit', $2, $3, $4)`,
           [compte.id, montantPret, nouveauSolde, `Décaissement prêt personnel - ${demande.duration_months} mois`]
         );
 
