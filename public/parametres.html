@@ -128,6 +128,40 @@
         }
         .message.success { background: #d1fae5; color: #065f46; }
         .message.error { background: #fee2e2; color: #991b1b; }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid #d1d5db;
+            font-size: 16px;
+            background: white;
+            color: #374151;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+        }
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 6px 0;
+        }
+        .section-divider {
+            border: none;
+            border-top: 1px solid #e5e7eb;
+            margin: 32px 0;
+        }
     </style>
 </head>
 <body>
@@ -148,7 +182,71 @@
     <div class="container">
         <div class="section-card">
             <h1>Paramètres du compte</h1>
-            <p class="subtitle">Changez votre mot de passe en toute sécurité. Vous devez saisir votre mot de passe actuel pour confirmer la modification.</p>
+
+            <!-- SECTION : Informations personnelles -->
+            <p class="section-title">Informations personnelles</p>
+            <p class="subtitle">Modifiez vos informations personnelles. L'email et la date de naissance ne peuvent pas être modifiés.</p>
+
+            <div id="alertProfil" class="message"></div>
+
+            <form id="profilForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="prenom">Prénom</label>
+                        <input type="text" id="prenom" placeholder="Prénom">
+                    </div>
+                    <div class="form-group">
+                        <label for="nom">Nom de famille</label>
+                        <input type="text" id="nom" placeholder="Nom">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Courriel</label>
+                        <input type="email" id="email" disabled style="background:#f3f4f6; color:#9ca3af; cursor:not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label for="telephone">Téléphone</label>
+                        <input type="tel" id="telephone" placeholder="514-555-0000">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="adresse">Adresse</label>
+                    <input type="text" id="adresse" placeholder="123 rue Exemple, Montréal">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="statut_professionnel">Statut professionnel</label>
+                        <select id="statut_professionnel">
+                            <option value="">-- Sélectionner --</option>
+                            <option value="student">Étudiant</option>
+                            <option value="employee">Employé</option>
+                            <option value="professional">Professionnel</option>
+                            <option value="retired">Retraité</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="type_residence">Type de résidence</label>
+                        <select id="type_residence">
+                            <option value="">-- Sélectionner --</option>
+                            <option value="owner">Propriétaire</option>
+                            <option value="tenant">Locataire</option>
+                            <option value="other">Autre</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="revenu_annuel">Revenu annuel ($)</label>
+                    <input type="number" id="revenu_annuel" placeholder="ex: 55000" min="0">
+                </div>
+                <button type="submit" class="btn-primary">Enregistrer les modifications</button>
+            </form>
+
+            <hr class="section-divider">
+
+            <!-- SECTION : Mot de passe -->
+            <p class="section-title">Changer le mot de passe</p>
+            <p class="subtitle">Vous devez saisir votre mot de passe actuel pour confirmer la modification.</p>
 
             <div id="alertMessage" class="message"></div>
 
@@ -173,7 +271,64 @@
     <script>
         const API_URL = '/api';
         const alertMessage = document.getElementById('alertMessage');
+        const alertProfil = document.getElementById('alertProfil');
         const changePasswordForm = document.getElementById('changePasswordForm');
+        const profilForm = document.getElementById('profilForm');
+
+        function showMessageProfil(text, type = 'success') {
+            alertProfil.textContent = text;
+            alertProfil.className = `message ${type}`;
+            alertProfil.style.display = 'block';
+            setTimeout(() => alertProfil.style.display = 'none', 4000);
+        }
+
+        // Charger les infos du profil au chargement
+        async function chargerProfil() {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(`${API_URL}/utilisateurs/mon-profil`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (data.succes) {
+                    const u = data.utilisateur;
+                    document.getElementById('prenom').value = u.prenom || '';
+                    document.getElementById('nom').value = u.nom || '';
+                    document.getElementById('email').value = u.email || '';
+                    document.getElementById('telephone').value = u.telephone || '';
+                    document.getElementById('adresse').value = u.adresse || '';
+                    document.getElementById('revenu_annuel').value = u.revenu_annuel || '';
+                    if (u.statut_professionnel) document.getElementById('statut_professionnel').value = u.statut_professionnel;
+                    if (u.type_residence) document.getElementById('type_residence').value = u.type_residence;
+                }
+            } catch (e) { console.error('Erreur chargement profil:', e); }
+        }
+        chargerProfil();
+
+        // Sauvegarder le profil
+        profilForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(`${API_URL}/utilisateurs/mon-profil`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({
+                        prenom: document.getElementById('prenom').value,
+                        nom: document.getElementById('nom').value,
+                        telephone: document.getElementById('telephone').value,
+                        adresse: document.getElementById('adresse').value,
+                        revenu_annuel: document.getElementById('revenu_annuel').value || null,
+                        statut_professionnel: document.getElementById('statut_professionnel').value || null,
+                        type_residence: document.getElementById('type_residence').value || null,
+                    })
+                });
+                const data = await res.json();
+                showMessageProfil(data.message, data.succes ? 'success' : 'error');
+            } catch (e) {
+                showMessageProfil('Erreur de communication avec le serveur.', 'error');
+            }
+        });
 
         function showMessage(text, type = 'success') {
             alertMessage.textContent = text;
