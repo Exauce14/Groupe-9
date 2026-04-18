@@ -1,0 +1,74 @@
+// Système de notifications toast - remplace les alert() natifs
+(function () {
+    const style = document.createElement('style');
+    style.textContent = `
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #fff;
+            min-width: 280px;
+            max-width: 400px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            animation: toastIn 0.3s ease;
+            pointer-events: all;
+            font-family: inherit;
+        }
+        .toast.success { background: #1a8a4a; }
+        .toast.error   { background: #c0392b; }
+        .toast.warning { background: #d68910; }
+        .toast.info    { background: #2471a3; }
+        .toast.fadeout { animation: toastOut 0.3s ease forwards; }
+        .toast-icon { font-size: 16px; flex-shrink: 0; }
+        @keyframes toastIn  { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes toastOut { from { opacity:1; transform:translateX(0); } to { opacity:0; transform:translateX(40px); } }
+    `;
+    document.head.appendChild(style);
+
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+
+    function showToast(message, type) {
+        // Nettoyer les emojis du message (✅ ❌ ⚠️ 🎉)
+        const clean = message.replace(/^[✅❌⚠️🎉📧🔒💳🏦]\s*/, '').trim();
+        const icons = { success: '✔', error: '✖', warning: '⚠', info: 'ℹ' };
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${clean}</span>`;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('fadeout');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    // Override window.alert
+    window.alert = function (message) {
+        const msg = String(message);
+        let type = 'info';
+        if (msg.includes('✅') || msg.includes('succès') || msg.includes('approuvé') || msg.includes('débloqué')) type = 'success';
+        else if (msg.includes('❌') || msg.includes('Erreur') || msg.includes('erreur'))  type = 'error';
+        else if (msg.includes('⚠️') || msg.includes('Veuillez') || msg.includes('requis')) type = 'warning';
+        showToast(msg, type);
+    };
+
+    // Exposer globalement
+    window.showToast = showToast;
+})();
