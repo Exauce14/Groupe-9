@@ -525,12 +525,53 @@
 
         <!-- SECTION TRANSACTIONS EN ATTENTE -->
         <div id="sectionTransactions" style="display: none;">
-            <div class="section-card">
-                <div class="section-header">
-                    <h2>Dépôts et retraits en attente</h2>
+            <!-- Onglets -->
+            <div style="display:flex; gap:10px; margin-bottom:18px;">
+                <button id="tabPending" onclick="switchTabTx('pending')" style="padding:10px 20px; border-radius:10px; border:none; background:#667eea; color:white; font-weight:600; cursor:pointer;">⏳ En attente</button>
+                <button id="tabAll" onclick="switchTabTx('all')" style="padding:10px 20px; border-radius:10px; border:2px solid #e5e7eb; background:white; color:#374151; font-weight:600; cursor:pointer;">📋 Toutes les transactions</button>
+            </div>
+
+            <!-- EN ATTENTE -->
+            <div id="tabContentPending">
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2>Dépôts et retraits en attente</h2>
+                    </div>
+                    <div id="transactionsContainer">
+                        <p style="color:#9ca3af; text-align:center; padding:30px;">Chargement...</p>
+                    </div>
                 </div>
-                <div id="transactionsContainer">
-                    <p style="color:#9ca3af; text-align:center; padding:30px;">Chargement...</p>
+            </div>
+
+            <!-- TOUTES LES TRANSACTIONS -->
+            <div id="tabContentAll" style="display:none;">
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2>Toutes les transactions</h2>
+                    </div>
+                    <!-- Filtres -->
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px;">
+                        <input id="txRecherche" type="text" placeholder="🔍 Nom, email, numéro de compte..." style="flex:1; min-width:200px; padding:10px 14px; border-radius:10px; border:1px solid #d1d5db; font-size:14px;">
+                        <select id="txStatut" style="padding:10px 14px; border-radius:10px; border:1px solid #d1d5db; font-size:14px;">
+                            <option value="">Tous les statuts</option>
+                            <option value="completed">Complétée</option>
+                            <option value="pending">En attente</option>
+                            <option value="failed">Échouée</option>
+                            <option value="cancelled">Annulée</option>
+                        </select>
+                        <select id="txType" style="padding:10px 14px; border-radius:10px; border:1px solid #d1d5db; font-size:14px;">
+                            <option value="">Tous les types</option>
+                            <option value="deposit">Dépôt</option>
+                            <option value="withdrawal">Retrait</option>
+                            <option value="transfer">Virement</option>
+                            <option value="payment">Paiement</option>
+                            <option value="fee">Frais</option>
+                        </select>
+                        <button onclick="chargerToutesTransactions()" style="padding:10px 20px; background:#667eea; color:white; border:none; border-radius:10px; font-weight:600; cursor:pointer;">Filtrer</button>
+                    </div>
+                    <div id="toutesTransactionsContainer">
+                        <p style="color:#9ca3af; text-align:center; padding:30px;">Cliquez sur Filtrer pour charger les transactions.</p>
+                    </div>
                 </div>
             </div>
         </div>

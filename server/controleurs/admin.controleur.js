@@ -852,6 +852,77 @@ exports.rejeterRetrait = async (req, res, next) => {
   }
 };
 
+// Retourne toutes les transactions avec filtres optionnels
+exports.toutesTransactions = async (req, res, next) => {
+  try {
+    const { statut, type, recherche, limite = 100 } = req.query;
+    let conditions = [];
+    let params = [];
+    let i = 1;
+
+    if (statut) { conditions.push(`t.status = $${i++}`); params.push(statut); }
+    if (type)   { conditions.push(`t.transaction_type = $${i++}`); params.push(type); }
+    if (recherche) {
+      conditions.push(`(u.first_name ILIKE $${i} OR u.last_name ILIKE $${i} OR u.email ILIKE $${i} OR a.account_number ILIKE $${i})`);
+      params.push(`%${recherche}%`); i++;
+    }
+
+    const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+    params.push(parseInt(limite));
+
+    const result = await query(
+      `SELECT t.id, t.transaction_type AS type, t.amount AS montant, t.description,
+              t.status AS statut, t.created_at AS date, t.balance_after AS solde_apres,
+              a.account_number AS numero_compte, a.account_type AS type_compte,
+              u.first_name AS prenom, u.last_name AS nom, u.email, u.id AS user_id
+       FROM transactions t
+       JOIN accounts a ON t.account_id = a.id
+       JOIN users u ON a.user_id = u.id
+       ${where}
+       ORDER BY t.created_at DESC
+       LIMIT $${i}`,
+      params
+    );
+    res.json({ succes: true, transactions: result.rows });
+  } catch (error) { next(error); }
+};
+
+// Annuler/inverser une transaction complétée
+exports.annulerTransaction = async (req, res, next) => {
+  try {
+    const { transactionId } = req.params;
+    const adminId = req.user.id;
+
+    const txnRes = await query(
+      `SELECT t.*, a.balance AS solde_actuel, a.id AS compte_id, a.user_id
+       FROM transactions t JOIN accounts a ON t.account_id = a.id
+       WHERE t.id = $1`,
+      [transactionId]
+    );
+    if (!txnRes.rows[0]) return res.status(404).json({ succes: false, message: 'Transaction introuvable.' });
+
+    const txn = txnRes.rows[0];
+    if (txn.status === 'cancelled') return res.status(400).json({ succes: false, message: 'Transaction déjà annulée.' });
+
+    // Inverser l'effet sur le solde
+    let newSolde = parseFloat(txn.solde_actuel);
+    const montant = parseFloat(txn.amount);
+    const typeCredit = ['deposit', 'transfer'].includes(txn.transaction_type);
+    newSolde = typeCredit ? newSolde - montant : newSolde + montant;
+
+    await query('UPDATE accounts SET balance = $1, updated_at = NOW() WHERE id = $2', [newSolde, txn.compte_id]);
+    await query(`UPDATE transactions SET status = 'cancelled', approved_by = $1, updated_at = NOW() WHERE id = $2`, [adminId, transactionId]);
+    await query(
+      `INSERT INTO transactions (account_id, transaction_type, amount, balance_after, description, status)
+       VALUES ($1, $2, $3, $4, $5, 'completed')`,
+      [txn.compte_id, typeCredit ? 'withdrawal' : 'deposit', montant, newSolde,
+       `Annulation admin - Transaction #${transactionId}`]
+    );
+
+    res.json({ succes: true, message: `Transaction #${transactionId} annulée et solde corrigé.` });
+  } catch (error) { next(error); }
+};
+
 // Retourne la liste de tous les comptes entreprise actifs avec le nom de l'entreprise,
 // l'email et le fournisseur associé si disponible.
 exports.comptesEntreprise = async (req, res, next) => {

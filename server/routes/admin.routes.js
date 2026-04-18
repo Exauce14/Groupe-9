@@ -26,6 +26,10 @@ router.get('/utilisateurs', adminControleur.tousLesUtilisateurs);
 router.post('/utilisateurs/:userId/bloquer', adminControleur.bloquerUtilisateur);
 router.post('/utilisateurs/:userId/debloquer', adminControleur.debloquerUtilisateur);
 
+// Toutes les transactions + annulation
+router.get('/transactions', adminControleur.toutesTransactions);
+router.post('/transactions/:transactionId/annuler', adminControleur.annulerTransaction);
+
 // Dépôts et retraits en attente
 router.get('/transactions-pending', adminControleur.transactionsPending);
 router.post('/transactions/:transactionId/approuver-depot', adminControleur.approuverDepot);

@@ -580,3 +580,116 @@ document.addEventListener('DOMContentLoaded', function() {
     chargerStats();
     restaurerSectionActive(); // Restaurer la section active
 });
+// ==============================
+// GESTION DES TRANSACTIONS
+// ==============================
+
+function switchTabTx(tab) {
+    const pending = document.getElementById('tabContentPending');
+    const all = document.getElementById('tabContentAll');
+    const btnPending = document.getElementById('tabPending');
+    const btnAll = document.getElementById('tabAll');
+    if (tab === 'pending') {
+        pending.style.display = 'block';
+        all.style.display = 'none';
+        btnPending.style.background = '#667eea';
+        btnPending.style.color = 'white';
+        btnPending.style.border = 'none';
+        btnAll.style.background = 'white';
+        btnAll.style.color = '#374151';
+        btnAll.style.border = '2px solid #e5e7eb';
+    } else {
+        pending.style.display = 'none';
+        all.style.display = 'block';
+        btnAll.style.background = '#667eea';
+        btnAll.style.color = 'white';
+        btnAll.style.border = 'none';
+        btnPending.style.background = 'white';
+        btnPending.style.color = '#374151';
+        btnPending.style.border = '2px solid #e5e7eb';
+        chargerToutesTransactions();
+    }
+}
+
+async function chargerToutesTransactions() {
+    const container = document.getElementById('toutesTransactionsContainer');
+    const recherche = document.getElementById('txRecherche').value;
+    const statut = document.getElementById('txStatut').value;
+    const type = document.getElementById('txType').value;
+
+    let url = `${API_URL}/admin/transactions?limite=200`;
+    if (recherche) url += `&recherche=${encodeURIComponent(recherche)}`;
+    if (statut) url += `&statut=${statut}`;
+    if (type) url += `&type=${type}`;
+
+    container.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:30px;">Chargement...</p>';
+    try {
+        const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        if (!data.succes || data.transactions.length === 0) {
+            container.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:30px;">Aucune transaction trouvée.</p>';
+            return;
+        }
+        const typesLabels = { deposit:'Dépôt', withdrawal:'Retrait', transfer:'Virement', payment:'Paiement', fee:'Frais' };
+        const statutColors = { completed:'#d1fae5', pending:'#fef3c7', failed:'#fee2e2', cancelled:'#f3f4f6' };
+        const statutTextColors = { completed:'#065f46', pending:'#92400e', failed:'#991b1b', cancelled:'#6b7280' };
+        const rows = data.transactions.map(t => `
+            <tr style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:12px 8px; font-weight:600; color:#374151;">#${t.id}</td>
+                <td style="padding:12px 8px;">${t.prenom} ${t.nom}<br><span style="font-size:12px;color:#9ca3af;">${t.email}</span></td>
+                <td style="padding:12px 8px; font-size:13px; color:#6b7280;">${t.numero_compte}</td>
+                <td style="padding:12px 8px;">${typesLabels[t.type] || t.type}</td>
+                <td style="padding:12px 8px; font-weight:700; color:${t.type==='deposit'||t.type==='transfer'?'#059669':'#dc2626'};">
+                    ${t.type==='deposit'||t.type==='transfer'?'+':'-'}${parseFloat(t.montant).toFixed(2)} $
+                </td>
+                <td style="padding:12px 8px;">
+                    <span style="background:${statutColors[t.statut]||'#f3f4f6'};color:${statutTextColors[t.statut]||'#374151'};padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;">
+                        ${t.statut}
+                    </span>
+                </td>
+                <td style="padding:12px 8px; font-size:12px; color:#9ca3af;">${new Date(t.date).toLocaleString('fr-CA')}</td>
+                <td style="padding:12px 8px;">
+                    ${t.statut !== 'cancelled' && t.statut !== 'pending' ? `
+                    <button onclick="annulerTransaction(${t.id})" style="background:#fee2e2;color:#991b1b;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">
+                        Annuler
+                    </button>` : '<span style="color:#d1d5db;font-size:12px;">—</span>'}
+                </td>
+            </tr>`).join('');
+        container.innerHTML = `
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                    <thead>
+                        <tr style="background:#f9fafb;text-align:left;">
+                            <th style="padding:12px 8px;color:#6b7280;font-weight:600;">ID</th>
+                            <th style="padding:12px 8px;color:#6b7280;font-weight:600;">Utilisateur</th>
+                            <th style="padding:12px 8px;color:#6b7280;font-weight:600;">Compte</th>
+                            <th style="padding:12px 8px;color:#6b7280;font-weight:600;">Type</th>
+                            <th style="padding:12px 8px;color:#6b7280;font-weight:600;">Montant</th>
+                            <th style="padding:12px 8px;color:#6b7280;font-weight:600;">Statut</th>
+                            <th style="padding:12px 8px;color:#6b7280;font-weight:600;">Date</th>
+                            <th style="padding:12px 8px;color:#6b7280;font-weight:600;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+            <p style="color:#9ca3af;font-size:12px;margin-top:12px;text-align:right;">${data.transactions.length} transaction(s) affichée(s)</p>`;
+    } catch(e) {
+        container.innerHTML = '<p style="color:#dc2626;text-align:center;padding:30px;">Erreur lors du chargement.</p>';
+    }
+}
+
+async function annulerTransaction(id) {
+    if (!confirm(`Annuler la transaction #${id} ? Le solde du compte sera corrigé automatiquement.`)) return;
+    try {
+        const res = await fetch(`${API_URL}/admin/transactions/${id}/annuler`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        showToast(data.message, data.succes ? 'success' : 'error');
+        if (data.succes) chargerToutesTransactions();
+    } catch(e) {
+        showToast('Erreur lors de l\'annulation.', 'error');
+    }
+}
