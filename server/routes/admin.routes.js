@@ -41,4 +41,10 @@ router.post('/transactions/:transactionId/rejeter-retrait', adminControleur.reje
 // Comptes entreprise
 router.get('/comptes-entreprise', adminControleur.comptesEntreprise);
 
+// Détail utilisateur + transactions + modifier + reset password
+router.get('/utilisateurs/:userId/detail', adminControleur.detailUtilisateur);
+router.get('/utilisateurs/:userId/transactions', adminControleur.transactionsUtilisateur);
+router.put('/utilisateurs/:userId/modifier', adminControleur.modifierUtilisateur);
+router.post('/utilisateurs/:userId/reset-password', adminControleur.resetPassword);
+
 module.exports = router;

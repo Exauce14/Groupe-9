@@ -630,10 +630,9 @@
                         <tr>
                             <th>Nom</th>
                             <th>Email</th>
+                            <th>Type</th>
                             <th>Statut</th>
-                            <th>Revenu annuel</th>
                             <th>Inscription</th>
-                            <th>Approbation</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -1140,7 +1139,8 @@
 
     // Supprime définitivement un fournisseur après confirmation de l'administrateur.
     async function supprimerFournisseur(id, nom) {
-        if (!confirm(`Supprimer le fournisseur "${nom}" ? Cette action est irréversible.`)) return;
+        const ok = await showConfirm(`Supprimer le fournisseur <strong>${nom}</strong> ?`, { title: 'Supprimer fournisseur', type: 'danger', confirmText: 'Supprimer' });
+        if (!ok) return;
         const token = localStorage.getItem('token');
         const res = await fetch(`/api/fournisseurs/admin/${id}`, {
             method: 'DELETE',
@@ -1151,7 +1151,7 @@
         else showToast('❌ ' + data.message);
     }
 
-    // Charge la liste de tous les utilisateurs et l'affiche avec les actions de blocage et déblocage.
+    // ── Chargement de la liste des utilisateurs ───────────────────────────────
     window.chargerUtilisateurs = async function() {
         const token = localStorage.getItem('token');
         try {
@@ -1164,27 +1164,31 @@
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:30px;">Aucun utilisateur</td></tr>';
                 return;
             }
-            const roleLabels = { user: 'Client personnel', enterprise: 'Entreprise', admin: 'Administrateur' };
+            const roleLabels = { user: 'Client', enterprise: 'Entreprise', admin: 'Administrateur' };
             const statusInfo = (s) => {
-                if (s === 'active') return { label: 'Actif', class: 'badge-approved' };
-                if (s === 'suspended') return { label: 'Suspendu', class: 'badge-rejected' };
-                return { label: 'En attente', class: 'badge-pending' };
+                if (s === 'active')    return { label: 'Actif',      cls: 'badge-approved' };
+                if (s === 'suspended') return { label: 'Suspendu',   cls: 'badge-rejected' };
+                if (s === 'rejected')  return { label: 'Rejeté',     cls: 'badge-rejected' };
+                return                        { label: 'En attente', cls: 'badge-pending'  };
             };
             tbody.innerHTML = data.utilisateurs.map(user => {
-                const si = statusInfo(user.statut_compte);
+                const si   = statusInfo(user.statut_compte);
                 const date = new Date(user.date_creation).toLocaleDateString('fr-CA', { year:'numeric', month:'short', day:'numeric' });
-                return `<tr>
-                    <td><strong>${user.prenom} ${user.nom}</strong></td>
+                const nom  = (user.prenom + ' ' + user.nom).replace(/'/g, "\\'");
+                return `<tr style="cursor:pointer;" onclick="ouvrirPanelUtilisateur(${user.id})">
+                    <td><strong style="color:#4f46e5;">${user.prenom} ${user.nom}</strong></td>
                     <td>${user.email}</td>
-                    <td>${roleLabels[user.role] || user.role || 'Client'}</td>
-                    <td><span class="badge ${si.class}">${si.label}</span></td>
+                    <td>${roleLabels[user.role] || 'Client'}</td>
+                    <td><span class="badge ${si.cls}">${si.label}</span></td>
                     <td>${date}</td>
-                    <td>
+                    <td onclick="event.stopPropagation()" style="display:flex;gap:6px;flex-wrap:wrap;">
                         ${user.statut_compte === 'suspended'
-                            ? `<button class="btn btn-unblock" onclick="debloquerUtilisateur(${user.id},'${user.prenom} ${user.nom}')">🔓 Débloquer</button>`
+                            ? `<button class="btn btn-unblock" onclick="debloquerUtilisateur(${user.id},'${nom}')">🔓 Débloquer</button>`
                             : user.statut_compte === 'active'
-                            ? `<button class="btn btn-block" onclick="bloquerUtilisateur(${user.id},'${user.prenom} ${user.nom}')">🔒 Bloquer</button>`
+                            ? `<button class="btn btn-block"   onclick="bloquerUtilisateur(${user.id},'${nom}')">🔒 Bloquer</button>`
                             : ''}
+                        <button style="background:#fee2e2;color:#991b1b;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;"
+                                onclick="supprimerUtilisateur(${user.id},'${nom}','${user.email}')">🗑️ Supprimer</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -1193,9 +1197,325 @@
 
     // Formate un nombre en devise canadienne (CAD) pour l'affichage dans le panneau admin.
     function formatAdmin(n) {
-        return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(n);
+        return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(n || 0);
+    }
+
+    // ── Panneau de détail utilisateur ─────────────────────────────────────────
+    let _panelUserId = null;
+
+    async function ouvrirPanelUtilisateur(userId) {
+        _panelUserId = userId;
+        const token = localStorage.getItem('token');
+        const panel = document.getElementById('userDetailPanel');
+        const overlay = document.getElementById('userDetailOverlay');
+
+        // Afficher le panneau vide / chargement
+        document.getElementById('panelLoading').style.display = 'block';
+        document.getElementById('panelContent').style.display = 'none';
+        panel.style.right = '0';
+        overlay.style.display = 'block';
+        switchPanelTab('info');
+
+        try {
+            const [detailRes, txRes] = await Promise.all([
+                fetch(`/api/admin/utilisateurs/${userId}/detail`,       { headers: { Authorization: `Bearer ${token}` } }),
+                fetch(`/api/admin/utilisateurs/${userId}/transactions`,  { headers: { Authorization: `Bearer ${token}` } })
+            ]);
+            const detail = await detailRes.json();
+            const txData = await txRes.json();
+
+            if (!detail.succes) { showToast('Erreur chargement utilisateur', 'error'); return; }
+
+            const u = detail.utilisateur;
+            const comptes = detail.comptes || [];
+            const txList  = txData.transactions || [];
+            const interac = txData.interac_envoyes || [];
+
+            // En-tête
+            const si = u.statut_compte === 'active' ? { label:'Actif', color:'#059669' }
+                     : u.statut_compte === 'suspended' ? { label:'Suspendu', color:'#dc2626' }
+                     : { label:'En attente', color:'#d97706' };
+
+            document.getElementById('panelUserName').textContent  = u.prenom + ' ' + u.nom;
+            document.getElementById('panelUserEmail').textContent = u.email;
+            document.getElementById('panelUserStatus').textContent = si.label;
+            document.getElementById('panelUserStatus').style.color = si.color;
+
+            // Bouton bloquer/débloquer dynamique
+            const btnBloquer = document.getElementById('panelBtnBloquer');
+            if (u.statut_compte === 'suspended') {
+                btnBloquer.textContent = '🔓 Débloquer';
+                btnBloquer.onclick = () => { fermerPanelUtilisateur(); debloquerUtilisateur(u.id, u.prenom + ' ' + u.nom); };
+            } else if (u.statut_compte === 'active') {
+                btnBloquer.textContent = '🔒 Bloquer';
+                btnBloquer.onclick = () => { fermerPanelUtilisateur(); bloquerUtilisateur(u.id, u.prenom + ' ' + u.nom); };
+            } else {
+                btnBloquer.textContent = '';
+                btnBloquer.onclick = null;
+            }
+            document.getElementById('panelBtnSupprimer').onclick = () => { fermerPanelUtilisateur(); supprimerUtilisateur(u.id, u.prenom + ' ' + u.nom, u.email); };
+            document.getElementById('panelBtnReset').onclick = () => resetPasswordAdmin(u.id, u.prenom + ' ' + u.nom);
+
+            // Formulaire info
+            document.getElementById('pf_prenom').value              = u.prenom || '';
+            document.getElementById('pf_nom').value                 = u.nom || '';
+            document.getElementById('pf_email').value               = u.email || '';
+            document.getElementById('pf_telephone').value           = u.telephone || '';
+            document.getElementById('pf_adresse').value             = u.adresse || '';
+            document.getElementById('pf_revenu').value              = u.revenu_annuel || '';
+            document.getElementById('pf_statut_pro').value          = u.statut_professionnel || '';
+            document.getElementById('pf_residence').value           = u.type_residence || '';
+            document.getElementById('pf_naissance').value           = u.date_naissance ? u.date_naissance.substring(0,10) : '';
+            document.getElementById('pf_date_inscription').textContent = u.date_creation
+                ? new Date(u.date_creation).toLocaleDateString('fr-CA', { year:'numeric', month:'long', day:'numeric' }) : '-';
+
+            // Comptes
+            const comptesHtml = comptes.length ? comptes.map(c => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f9fafb;border-radius:8px;margin-bottom:8px;">
+                    <div>
+                        <strong style="font-size:13px;">${{ chequing:'Compte chèques', savings:'Compte épargne', credit:'Carte de crédit', investment:'Placement', enterprise:'Entreprise' }[c.type_compte] || c.type_compte}</strong>
+                        <div style="font-size:12px;color:#6b7280;">${c.numero_compte}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:700;color:#111827;">${formatAdmin(c.solde)}</div>
+                        <div style="font-size:11px;color:${c.statut==='active'?'#059669':'#dc2626'}">${c.statut==='active'?'Actif':'Inactif'}</div>
+                    </div>
+                </div>`).join('') : '<p style="color:#9ca3af;font-size:13px;">Aucun compte</p>';
+            document.getElementById('panelComptes').innerHTML = comptesHtml;
+
+            // Transactions
+            const typeLabels = { deposit:'Dépôt', withdrawal:'Retrait', transfer:'Virement', payment:'Paiement', interac_received:'Interac reçu' };
+            const typeColors = { deposit:'#059669', withdrawal:'#dc2626', transfer:'#4f46e5', payment:'#d97706', interac_received:'#059669' };
+
+            // Enrichir les transactions avec les données interac si applicable
+            const interacMap = {};
+            interac.forEach(it => {
+                const key = it.date ? it.date.substring(0,16) : '';
+                interacMap[key + '_' + it.montant] = it;
+            });
+
+            const txRows = txList.map(tx => {
+                const label = typeLabels[tx.type] || tx.type;
+                const color = typeColors[tx.type] || '#374151';
+                const date  = new Date(tx.date).toLocaleDateString('fr-CA', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+                const signe = ['deposit','interac_received'].includes(tx.type) ? '+' : '-';
+                const signeColor = signe === '+' ? '#059669' : '#dc2626';
+
+                // Pour Interac envoyé, chercher destinataire dans interacMap
+                let extra = '';
+                if (tx.type === 'transfer' && tx.description && tx.description.includes('Interac')) {
+                    const emailMatch = tx.description.match(/[\w.-]+@[\w.-]+\.\w+/);
+                    if (emailMatch) {
+                        const key = tx.date.substring(0,16) + '_' + tx.montant;
+                        const it  = interacMap[key];
+                        extra = `<div style="font-size:11px;color:#6b7280;">→ ${it ? (it.nom_destinataire || it.recipient_email) : emailMatch[0]}</div>`;
+                    }
+                }
+
+                return `<tr>
+                    <td style="font-size:12px;color:#6b7280;">${date}</td>
+                    <td><span style="background:${color}20;color:${color};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">${label}</span></td>
+                    <td style="font-size:12px;color:#374151;">${tx.description || '-'}${extra}</td>
+                    <td style="font-weight:700;color:${signeColor};text-align:right;">${signe}${formatAdmin(tx.montant)}</td>
+                    <td style="font-size:11px;color:${tx.statut==='completed'?'#059669':tx.statut==='pending'?'#d97706':'#dc2626'};text-align:center;">${tx.statut}</td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('panelTxTable').querySelector('tbody').innerHTML =
+                txRows || '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:20px;">Aucune transaction</td></tr>';
+
+            document.getElementById('panelLoading').style.display = 'none';
+            document.getElementById('panelContent').style.display = 'block';
+        } catch (e) {
+            console.error(e);
+            showToast('Erreur chargement panneau', 'error');
+        }
+    }
+
+    function fermerPanelUtilisateur() {
+        document.getElementById('userDetailPanel').style.right = '-100%';
+        document.getElementById('userDetailOverlay').style.display = 'none';
+    }
+
+    function switchPanelTab(tab) {
+        document.getElementById('panelTabInfo').style.display = tab === 'info' ? 'block' : 'none';
+        document.getElementById('panelTabTx').style.display   = tab === 'tx'   ? 'block' : 'none';
+        document.getElementById('panelTabBtnInfo').style.borderBottom = tab === 'info' ? '3px solid #4f46e5' : '3px solid transparent';
+        document.getElementById('panelTabBtnTx').style.borderBottom   = tab === 'tx'   ? '3px solid #4f46e5' : '3px solid transparent';
+        document.getElementById('panelTabBtnInfo').style.color = tab === 'info' ? '#4f46e5' : '#6b7280';
+        document.getElementById('panelTabBtnTx').style.color   = tab === 'tx'   ? '#4f46e5' : '#6b7280';
+    }
+
+    async function sauvegarderInfosUtilisateur() {
+        const token = localStorage.getItem('token');
+        const body = {
+            prenom:               document.getElementById('pf_prenom').value,
+            nom:                  document.getElementById('pf_nom').value,
+            telephone:            document.getElementById('pf_telephone').value,
+            adresse:              document.getElementById('pf_adresse').value,
+            revenu_annuel:        document.getElementById('pf_revenu').value,
+            statut_professionnel: document.getElementById('pf_statut_pro').value,
+            type_residence:       document.getElementById('pf_residence').value
+        };
+        try {
+            const res  = await fetch(`/api/admin/utilisateurs/${_panelUserId}/modifier`, {
+                method: 'PUT',
+                headers: { 'Content-Type':'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            showToast(data.message, data.succes ? 'success' : 'error');
+            if (data.succes) chargerUtilisateurs();
+        } catch (e) { showToast('Erreur sauvegarde', 'error'); }
+    }
+
+    async function resetPasswordAdmin(userId, userName) {
+        const ok = await showConfirm(
+            `Réinitialiser le mot de passe de <strong>${userName}</strong> ?<br>Un mot de passe temporaire sera généré et envoyé par email.`,
+            { title: 'Reset mot de passe', type: 'warning', confirmText: 'Réinitialiser' }
+        );
+        if (!ok) return;
+        const token = localStorage.getItem('token');
+        try {
+            const res  = await fetch(`/api/admin/utilisateurs/${userId}/reset-password`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.succes) {
+                showToast(`✅ Mot de passe réinitialisé. Temporaire : ${data.tempPassword}`, 'success');
+            } else {
+                showToast('❌ ' + data.message, 'error');
+            }
+        } catch (e) { showToast('Erreur reset password', 'error'); }
     }
     </script>
+
+<!-- ── Overlay ─────────────────────────────────────────────────────────── -->
+<div id="userDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9998;" onclick="fermerPanelUtilisateur()"></div>
+
+<!-- ── Panneau de détail utilisateur ──────────────────────────────────────── -->
+<div id="userDetailPanel" style="
+    position:fixed;top:0;right:-100%;width:700px;max-width:100%;height:100%;
+    background:#fff;box-shadow:-6px 0 40px rgba(0,0,0,.18);
+    z-index:9999;overflow-y:auto;transition:right .3s ease;display:flex;flex-direction:column;">
+
+    <!-- En-tête panneau -->
+    <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:24px 28px;color:#fff;flex-shrink:0;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+                <div style="font-size:22px;font-weight:700;" id="panelUserName">—</div>
+                <div style="font-size:14px;opacity:.85;margin-top:4px;" id="panelUserEmail">—</div>
+                <div style="margin-top:8px;">
+                    <span style="background:rgba(255,255,255,.2);padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600;" id="panelUserStatus">—</span>
+                </div>
+            </div>
+            <button onclick="fermerPanelUtilisateur()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;line-height:1;">×</button>
+        </div>
+        <!-- Boutons d'action -->
+        <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+            <button id="panelBtnBloquer" style="background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.4);color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔒 Bloquer</button>
+            <button id="panelBtnReset"   style="background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.4);color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔑 Reset mot de passe</button>
+            <button id="panelBtnSupprimer" style="background:rgba(220,38,38,.6);border:1.5px solid rgba(220,38,38,.8);color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🗑️ Supprimer</button>
+        </div>
+    </div>
+
+    <!-- Onglets -->
+    <div style="display:flex;border-bottom:1px solid #e5e7eb;background:#fff;flex-shrink:0;">
+        <button id="panelTabBtnInfo" onclick="switchPanelTab('info')" style="flex:1;padding:14px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid #4f46e5;color:#4f46e5;">👤 Informations</button>
+        <button id="panelTabBtnTx"   onclick="switchPanelTab('tx')"   style="flex:1;padding:14px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:#6b7280;">📋 Transactions</button>
+    </div>
+
+    <!-- Chargement -->
+    <div id="panelLoading" style="padding:60px;text-align:center;color:#9ca3af;">Chargement...</div>
+
+    <!-- Contenu -->
+    <div id="panelContent" style="display:none;flex:1;overflow-y:auto;">
+
+        <!-- ── Onglet Informations ── -->
+        <div id="panelTabInfo" style="padding:24px 28px;">
+            <h4 style="font-size:14px;font-weight:700;color:#374151;margin:0 0 16px;text-transform:uppercase;letter-spacing:.5px;">Informations personnelles</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div>
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Prénom</label>
+                    <input id="pf_prenom" type="text" style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Nom</label>
+                    <input id="pf_nom" type="text" style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <div style="grid-column:1/-1;">
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Email</label>
+                    <input id="pf_email" type="email" readonly style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;box-sizing:border-box;background:#f9fafb;color:#6b7280;">
+                </div>
+                <div>
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Téléphone</label>
+                    <input id="pf_telephone" type="tel" style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Date de naissance</label>
+                    <input id="pf_naissance" type="date" readonly style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;box-sizing:border-box;background:#f9fafb;color:#6b7280;">
+                </div>
+                <div style="grid-column:1/-1;">
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Adresse</label>
+                    <input id="pf_adresse" type="text" style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Revenu annuel ($)</label>
+                    <input id="pf_revenu" type="number" style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Statut professionnel</label>
+                    <select id="pf_statut_pro" style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                        <option value="">— Sélectionner —</option>
+                        <option value="employed">Employé</option>
+                        <option value="self_employed">Travailleur autonome</option>
+                        <option value="student">Étudiant</option>
+                        <option value="retired">Retraité</option>
+                        <option value="unemployed">Sans emploi</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Type de résidence</label>
+                    <select id="pf_residence" style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                        <option value="">— Sélectionner —</option>
+                        <option value="owner">Propriétaire</option>
+                        <option value="renter">Locataire</option>
+                        <option value="other">Autre</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Date d'inscription</label>
+                    <div id="pf_date_inscription" style="padding:9px 12px;background:#f9fafb;border-radius:8px;font-size:14px;color:#6b7280;">—</div>
+                </div>
+            </div>
+            <button onclick="sauvegarderInfosUtilisateur()" style="margin-top:20px;width:100%;padding:11px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">💾 Sauvegarder les modifications</button>
+
+            <!-- Comptes -->
+            <h4 style="font-size:14px;font-weight:700;color:#374151;margin:28px 0 14px;text-transform:uppercase;letter-spacing:.5px;">Comptes bancaires</h4>
+            <div id="panelComptes"></div>
+        </div>
+
+        <!-- ── Onglet Transactions ── -->
+        <div id="panelTabTx" style="display:none;padding:24px 28px;">
+            <h4 style="font-size:14px;font-weight:700;color:#374151;margin:0 0 16px;text-transform:uppercase;letter-spacing:.5px;">Historique complet</h4>
+            <div style="overflow-x:auto;">
+                <table id="panelTxTable" style="width:100%;border-collapse:collapse;font-size:13px;">
+                    <thead>
+                        <tr style="background:#f9fafb;">
+                            <th style="padding:10px 12px;text-align:left;color:#6b7280;font-weight:600;border-bottom:1px solid #e5e7eb;">Date</th>
+                            <th style="padding:10px 12px;text-align:left;color:#6b7280;font-weight:600;border-bottom:1px solid #e5e7eb;">Type</th>
+                            <th style="padding:10px 12px;text-align:left;color:#6b7280;font-weight:600;border-bottom:1px solid #e5e7eb;">Description</th>
+                            <th style="padding:10px 12px;text-align:right;color:#6b7280;font-weight:600;border-bottom:1px solid #e5e7eb;">Montant</th>
+                            <th style="padding:10px 12px;text-align:center;color:#6b7280;font-weight:600;border-bottom:1px solid #e5e7eb;">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

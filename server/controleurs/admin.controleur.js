@@ -970,3 +970,127 @@ exports.comptesEntreprise = async (req, res, next) => {
     res.json({ succes: true, comptes: result.rows });
   } catch (error) { next(error); }
 };
+
+// ─── Détail complet d'un utilisateur ────────────────────────────────────────
+exports.detailUtilisateur = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const userRes = await query(
+      `SELECT id, email, first_name AS prenom, last_name AS nom,
+              phone AS telephone, address AS adresse,
+              account_status AS statut_compte, annual_income AS revenu_annuel,
+              status AS statut_professionnel, residence_type AS type_residence,
+              date_of_birth AS date_naissance, role,
+              created_at AS date_creation, approved_at AS date_approbation
+       FROM users WHERE id = $1`, [userId]
+    );
+    if (!userRes.rows[0]) return res.status(404).json({ succes: false, message: 'Utilisateur introuvable.' });
+
+    const comptesRes = await query(
+      `SELECT id, account_number AS numero_compte, account_type AS type_compte,
+              balance AS solde, status AS statut, credit_limit AS limite_credit
+       FROM accounts WHERE user_id = $1 ORDER BY created_at`, [userId]
+    );
+
+    res.json({ succes: true, utilisateur: userRes.rows[0], comptes: comptesRes.rows });
+  } catch (error) { next(error); }
+};
+
+// ─── Transactions d'un utilisateur ──────────────────────────────────────────
+exports.transactionsUtilisateur = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const txRes = await query(
+      `SELECT t.id, t.transaction_type AS type, t.amount AS montant,
+              t.description, t.status AS statut,
+              t.created_at AS date, t.balance_after AS solde_apres,
+              a.account_number AS numero_compte, a.account_type AS type_compte
+       FROM transactions t
+       JOIN accounts a ON t.account_id = a.id
+       WHERE a.user_id = $1
+       ORDER BY t.created_at DESC LIMIT 300`, [userId]
+    );
+
+    // Virements Interac envoyés (avec nom/email destinataire)
+    const interacRes = await query(
+      `SELECT it.id, it.amount AS montant, it.status AS statut,
+              it.created_at AS date, it.recipient_email,
+              it.message,
+              COALESCE(u.first_name || ' ' || u.last_name, NULL) AS nom_destinataire,
+              a.account_number AS numero_compte
+       FROM interac_transfers it
+       JOIN accounts a ON it.sender_account_id = a.id
+       LEFT JOIN users u ON it.recipient_id = u.id
+       WHERE it.sender_id = $1
+       ORDER BY it.created_at DESC`, [userId]
+    );
+
+    res.json({ succes: true, transactions: txRes.rows, interac_envoyes: interacRes.rows });
+  } catch (error) { next(error); }
+};
+
+// ─── Modifier les informations d'un utilisateur ─────────────────────────────
+exports.modifierUtilisateur = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { prenom, nom, telephone, adresse, revenu_annuel, statut_professionnel, type_residence } = req.body;
+
+    const userBefore = await query('SELECT first_name, last_name FROM users WHERE id = $1', [userId]);
+    if (!userBefore.rows[0]) return res.status(404).json({ succes: false, message: 'Utilisateur introuvable.' });
+
+    await query(
+      `UPDATE users SET
+         first_name     = COALESCE($1, first_name),
+         last_name      = COALESCE($2, last_name),
+         phone          = COALESCE($3, phone),
+         address        = COALESCE($4, address),
+         annual_income  = COALESCE($5, annual_income),
+         status         = COALESCE($6, status),
+         residence_type = COALESCE($7, residence_type),
+         updated_at     = NOW()
+       WHERE id = $8`,
+      [prenom || null, nom || null, telephone || null, adresse || null,
+       revenu_annuel || null, statut_professionnel || null, type_residence || null, userId]
+    );
+
+    // Log comme notification interne
+    await notificationModel.creer({
+      utilisateurId: parseInt(userId),
+      type: 'profile_update',
+      message: 'Vos informations personnelles ont été mises à jour par un administrateur.'
+    });
+
+    res.json({ succes: true, message: 'Informations mises à jour.' });
+  } catch (error) { next(error); }
+};
+
+// ─── Reset du mot de passe par l'admin ──────────────────────────────────────
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const bcrypt = require('bcrypt');
+    const { userId } = req.params;
+
+    const userRes = await query('SELECT email, first_name AS prenom FROM users WHERE id = $1', [userId]);
+    if (!userRes.rows[0]) return res.status(404).json({ succes: false, message: 'Utilisateur introuvable.' });
+    const { email, prenom } = userRes.rows[0];
+
+    // Générer un mot de passe temporaire
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let tempPassword = '';
+    for (let i = 0; i < 10; i++) tempPassword += chars[Math.floor(Math.random() * chars.length)];
+
+    const hash = await bcrypt.hash(tempPassword, 10);
+    await query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hash, userId]);
+
+    // Notification interne
+    await notificationModel.creer({
+      utilisateurId: parseInt(userId),
+      type: 'security_alert',
+      message: 'Votre mot de passe a été réinitialisé par un administrateur. Consultez votre email.'
+    });
+
+    await emailUtils.envoyerCode2FA(email, prenom, tempPassword);
+
+    res.json({ succes: true, message: `Mot de passe réinitialisé. Email envoyé à ${email}.`, tempPassword });
+  } catch (error) { next(error); }
+};
