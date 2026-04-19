@@ -1,0 +1,135 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.1 Chrome/142.0.7444.265 Electron/39.8.0 Safari/537.36" version="29.6.1">
+  <diagram name="Diagramme d&#39;État - Statuts Compte" id="fortivia-state-diagram">
+    <mxGraphModel dx="1011" dy="477" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1" value="DIAGRAMME D&#39;ÉTATS - CYCLE DE VIE COMPTE UTILISATEUR" vertex="1">
+          <mxGeometry height="40" width="700" x="234.5" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="initial-state" parent="1" style="ellipse;fillColor=#000000;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="569.5" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="state-pending" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;fontStyle=1" value="PENDING&#xa;(En attente)" vertex="1">
+          <mxGeometry height="80" width="180" x="494.5" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="pending-activities" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;fillColor=#fffacd;strokeColor=#d6b656;fontSize=10" value="do/&#xa;• Compte créé mais inactif&#xa;• Attend approbation admin&#xa;• Connexion impossible" vertex="1">
+          <mxGeometry height="80" width="200" x="704.5" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="transition1" edge="1" parent="1" source="initial-state" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#fff2cc;strokeColor=#d6b656;" target="state-pending" value="Inscription réussie">
+          <mxGeometry relative="1" width="160" as="geometry" />
+        </mxCell>
+        <mxCell id="state-active" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;fontStyle=1" value="ACTIVE&#xa;(Actif)" vertex="1">
+          <mxGeometry height="80" width="180" x="494.5" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="active-activities" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;fillColor=#d5f5d4;strokeColor=#82b366;fontSize=10" value="do/&#xa;• Toutes fonctionnalités disponibles&#xa;• Connexion autorisée&#xa;• Opérations bancaires permises" vertex="1">
+          <mxGeometry height="80" width="220" x="704.5" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="transition2" edge="1" parent="1" source="state-pending" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" target="state-active" value="Admin approuve">
+          <mxGeometry relative="1" width="160" as="geometry" />
+        </mxCell>
+        <mxCell id="action-create-account" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#d5e8d4;strokeColor=#82b366;size=10;fontSize=9;align=left" value="Action:&#xa;• Création compte chèque&#xa;• Solde initial 5.00$&#xa;• Transaction bienvenue&#xa;• Email confirmation&#xa;• Notification" vertex="1">
+          <mxGeometry height="90" width="130" x="340" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="state-suspended" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;fontStyle=1" value="SUSPENDED&#xa;(Suspendu)" vertex="1">
+          <mxGeometry height="80" width="180" x="150" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="suspended-activities" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;fillColor=#ffe6e6;strokeColor=#b85450;fontSize=10" value="do/&#xa;• Connexion bloquée&#xa;• Toutes opérations suspendues&#xa;• Raison affichée à l&#39;utilisateur" vertex="1">
+          <mxGeometry height="80" width="200" x="350" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="transition3" edge="1" parent="1" source="state-active" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#f8cecc;strokeColor=#b85450;" target="state-suspended" value="Admin bloque [raison fournie]">
+          <mxGeometry relative="1" width="160" as="geometry" />
+        </mxCell>
+        <mxCell id="action-suspend" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#f8cecc;strokeColor=#b85450;size=10;fontSize=9;align=left" value="Action:&#xa;• UPDATE account_status&#xa;• Enregistre raison&#xa;• Email notification&#xa;• Notification temps réel&#xa;• Invalidation sessions" vertex="1">
+          <mxGeometry height="100" width="130" x="150" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="transition4" edge="1" parent="1" source="state-suspended" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;curved=1;" target="state-active" value="Admin débloque">
+          <mxGeometry relative="1" width="160" x="-0.25" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="action-reactive" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#d5e8d4;strokeColor=#82b366;size=10;fontSize=9;align=left" value="Action:&#xa;• UPDATE account_status&#xa;• Email réactivation&#xa;• Notification&#xa;• Accès rétabli" vertex="1">
+          <mxGeometry height="80" width="110" x="340" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="state-rejected" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;fontStyle=1" value="REJECTED&#xa;(Rejeté)" vertex="1">
+          <mxGeometry height="80" width="180" x="150" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="rejected-activities" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;fillColor=#ffe6e6;strokeColor=#b85450;fontSize=10" value="do/&#xa;• Inscription refusée&#xa;• Connexion impossible&#xa;• État final (permanent)" vertex="1">
+          <mxGeometry height="70" width="180" x="60" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="transition5" edge="1" parent="1" source="state-pending" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#f8cecc;strokeColor=#b85450;" target="state-rejected" value="Admin rejette">
+          <mxGeometry relative="1" width="160" as="geometry" />
+        </mxCell>
+        <mxCell id="action-reject" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#f8cecc;strokeColor=#b85450;size=10;fontSize=9;align=left" value="Action:&#xa;• UPDATE account_status&#xa;• Email rejet&#xa;• Notification" vertex="1">
+          <mxGeometry height="70" width="100" x="340" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="state-closed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;fontStyle=1" value="CLOSED&#xa;(Fermé)" vertex="1">
+          <mxGeometry height="80" width="180" x="839" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="closed-activities" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;fillColor=#f3e5f5;strokeColor=#9673a6;fontSize=10" value="do/&#xa;• Compte fermé définitivement&#xa;• Connexion impossible&#xa;• État final (permanent)" vertex="1">
+          <mxGeometry height="70" width="180" x="839" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="transition6" edge="1" parent="1" source="state-active" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#e1d5e7;strokeColor=#9673a6;" target="state-closed" value="Utilisateur ferme compte&#xa;[solde = 0]">
+          <mxGeometry relative="1" width="160" as="geometry" />
+        </mxCell>
+        <mxCell id="action-close" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#e1d5e7;strokeColor=#9673a6;size=10;fontSize=9;align=left" value="Action:&#xa;• Vérification solde = 0&#xa;• UPDATE account_status&#xa;• Archivage données&#xa;• Email confirmation" vertex="1">
+          <mxGeometry height="80" width="130" x="889" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="final-rejected" parent="1" style="ellipse;html=1;shape=mxgraph.flowchart.start_2;strokeColor=#b85450;fillColor=#f8cecc;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="65" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="transition-final1" edge="1" parent="1" source="state-rejected" style="endArrow=none;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;strokeWidth=2;strokeColor=#b85450;" target="final-rejected" value="">
+          <mxGeometry relative="1" width="160" as="geometry" />
+        </mxCell>
+        <mxCell id="final-closed" parent="1" style="ellipse;html=1;shape=mxgraph.flowchart.start_2;strokeColor=#9673a6;fillColor=#e1d5e7;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="1044" y="505" as="geometry" />
+        </mxCell>
+        <mxCell id="transition-final2" edge="1" parent="1" source="state-closed" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;strokeWidth=2;strokeColor=#9673a6;" target="final-closed" value="">
+          <mxGeometry relative="1" width="160" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-box" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry height="90" width="700" x="60" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" value="LÉGENDE" vertex="1">
+          <mxGeometry height="25" width="680" x="60" y="705" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-pending" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;fontStyle=1" value="PENDING" vertex="1">
+          <mxGeometry height="35" width="100" x="75" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-active" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1" value="ACTIVE" vertex="1">
+          <mxGeometry height="35" width="100" x="185" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-suspended" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;fontStyle=1" value="SUSPENDED" vertex="1">
+          <mxGeometry height="35" width="100" x="295" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-rejected" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;fontStyle=1" value="REJECTED" vertex="1">
+          <mxGeometry height="35" width="100" x="405" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-closed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;fontStyle=1" value="CLOSED" vertex="1">
+          <mxGeometry height="35" width="100" x="515" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-initial" parent="1" style="ellipse;fillColor=#000000;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="20" width="20" x="635" y="745" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-initial-text" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9" value="Initial" vertex="1">
+          <mxGeometry height="25" width="40" x="660" y="742" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-final" parent="1" style="ellipse;html=1;shape=mxgraph.flowchart.start_2;strokeColor=#000000;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="20" width="20" x="705" y="745" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-final-text" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9" value="Final" vertex="1">
+          <mxGeometry height="25" width="30" x="730" y="742" as="geometry" />
+        </mxCell>
+        <mxCell id="sprint-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#d5e8d4;strokeColor=#82b366;size=10;fontSize=10;fontStyle=1;align=left" value="Sprint 1 Complété&#xa;Mars 2026&#xa;&#xa;Règles métier:&#xa;• Admin ne peut se bloquer&#xa;• Raison obligatoire (blocage)&#xa;• Fermeture si solde = 0&#xa;• Emails + notifications&#xa;  automatiques" vertex="1">
+          <mxGeometry height="120" width="170" x="790" y="694.5" as="geometry" />
+        </mxCell>
+        <mxCell id="admin-protection" parent="1" style="shape=callout;whiteSpace=wrap;html=1;perimeter=calloutPerimeter;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;fontStyle=1;base=20;size=10;position=0.5;position2=0" value="🛡️ PROTECTION ADMIN&#xa;Un administrateur ne peut&#xa;jamais bloquer son propre&#xa;compte" vertex="1">
+          <mxGeometry height="80" width="160" x="570" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="auto-check" parent="1" style="shape=callout;whiteSpace=wrap;html=1;perimeter=calloutPerimeter;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;fontStyle=1;base=15;size=10;position=0.8;position2=0" value="⏰ VÉRIFICATION AUTO&#xa;Frontend vérifie statut&#xa;toutes les 30 secondes&#xa;→ Logout si suspendu" vertex="1">
+          <mxGeometry height="70" width="150" x="950" y="240" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
