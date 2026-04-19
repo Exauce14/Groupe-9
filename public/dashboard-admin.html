@@ -1181,16 +1181,15 @@
                     <td>${roleLabels[user.role] || 'Client'}</td>
                     <td><span class="badge ${si.cls}">${si.label}</span></td>
                     <td>${date}</td>
-                    <td onclick="event.stopPropagation()" style="white-space:nowrap;">
-                        <div style="display:inline-block;width:110px;vertical-align:middle;">
+                    <td onclick="event.stopPropagation()" style="padding:8px 12px;">
+                        <div style="display:flex;flex-direction:column;gap:6px;width:120px;">
                             ${user.statut_compte === 'suspended'
-                                ? `<button class="btn btn-unblock" onclick="debloquerUtilisateur(${user.id},'${nom}')">🔓 Débloquer</button>`
+                                ? `<button onclick="debloquerUtilisateur(${user.id},'${nom}')" style="width:100%;padding:6px 0;background:#d1fae5;color:#065f46;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;">🔓 Débloquer</button>`
                                 : user.statut_compte === 'active'
-                                ? `<button class="btn btn-block"   onclick="bloquerUtilisateur(${user.id},'${nom}')">🔒 Bloquer</button>`
-                                : ''}
+                                ? `<button onclick="bloquerUtilisateur(${user.id},'${nom}')" style="width:100%;padding:6px 0;background:#fef3c7;color:#92400e;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;">🔒 Bloquer</button>`
+                                : `<button disabled style="width:100%;padding:6px 0;background:#f3f4f6;color:#9ca3af;border:none;border-radius:7px;font-size:12px;">—</button>`}
+                            <button onclick="supprimerUtilisateur(${user.id},'${nom}','${user.email}')" style="width:100%;padding:6px 0;background:#fee2e2;color:#991b1b;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;">🗑️ Supprimer</button>
                         </div>
-                        <button style="background:#fee2e2;color:#991b1b;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;vertical-align:middle;"
-                                onclick="supprimerUtilisateur(${user.id},'${nom}','${user.email}')">🗑️ Supprimer</button>
                     </td>
                 </tr>`;
             }).join('');
