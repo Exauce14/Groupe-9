@@ -79,11 +79,18 @@ exports.payerFacture = async (req, res, next) => {
       sourceId = compte.id;
     }
 
-    // Débiter le client (toujours — l'argent est "retenu")
-    const newSoldeClient = soldeSource - montant;
-    await query('UPDATE accounts SET balance = $1, updated_at = NOW() WHERE id = $2', [newSoldeClient, sourceId]);
+    // Débiter le client
+    let balanceAfter;
     if (carteId) {
+      // Carte de crédit : seulement réduire le crédit disponible, ne pas toucher accounts.balance
+      const carte = (await query('SELECT available_credit FROM cards WHERE id = $1', [carteId])).rows[0];
+      balanceAfter = parseFloat(carte.available_credit) - montant;
       await query('UPDATE cards SET available_credit = available_credit - $1 WHERE id = $2', [montant, carteId]);
+    } else {
+      // Compte standard : débiter le solde
+      const newSoldeClient = soldeSource - montant;
+      await query('UPDATE accounts SET balance = $1, updated_at = NOW() WHERE id = $2', [newSoldeClient, sourceId]);
+      balanceAfter = newSoldeClient;
     }
     const desc = description || `Paiement ${fournisseur.nom}${numeroReference ? ' - Réf: ' + numeroReference : ''}`;
 
@@ -93,7 +100,7 @@ exports.payerFacture = async (req, res, next) => {
     const txnClientRes = await query(
       `INSERT INTO transactions (account_id, transaction_type, amount, balance_after, description, status)
        VALUES ($1, 'payment', $2, $3, $4, $5) RETURNING id`,
-      [sourceId, montant, newSoldeClient, desc, pendingStatus]
+      [sourceId, montant, balanceAfter, desc, pendingStatus]
     );
 
     // Si fournisseur sans compte entreprise → créditer immédiatement (logique externe)
@@ -170,10 +177,21 @@ exports.annulerPaiementFacture = async (req, res, next) => {
       return res.status(400).json({ succes: false, message: 'Ce paiement ne peut plus être annulé.' });
     }
 
-    // Rembourser
-    const compteRes = await query('SELECT balance FROM accounts WHERE id = $1', [paiement.from_account_id]);
-    const newSolde = parseFloat(compteRes.rows[0].balance) + parseFloat(paiement.amount);
-    await query('UPDATE accounts SET balance = $1, updated_at = NOW() WHERE id = $2', [newSolde, paiement.from_account_id]);
+    // Rembourser : carte de crédit → restaurer available_credit ; compte → restaurer solde
+    const carteRefund = await query(
+      `SELECT id, available_credit FROM cards WHERE account_id = $1 AND card_type = 'credit'`,
+      [paiement.from_account_id]
+    );
+    let newSolde;
+    if (carteRefund.rows[0]) {
+      const carte = carteRefund.rows[0];
+      newSolde = parseFloat(carte.available_credit) + parseFloat(paiement.amount);
+      await query('UPDATE cards SET available_credit = available_credit + $1 WHERE id = $2', [paiement.amount, carte.id]);
+    } else {
+      const compteRes = await query('SELECT balance FROM accounts WHERE id = $1', [paiement.from_account_id]);
+      newSolde = parseFloat(compteRes.rows[0].balance) + parseFloat(paiement.amount);
+      await query('UPDATE accounts SET balance = $1, updated_at = NOW() WHERE id = $2', [newSolde, paiement.from_account_id]);
+    }
     await query(
       `INSERT INTO transactions (account_id, transaction_type, amount, balance_after, description, status)
        VALUES ($1, 'payment', $2, $3, $4, 'completed')`,
@@ -351,10 +369,21 @@ exports.rejeterPaiementFacture = async (req, res, next) => {
     if (!res2.rows[0]) return res.status(404).json({ succes: false, message: 'Paiement introuvable.' });
     const p = res2.rows[0];
 
-    // Rembourser le client
-    const compteClientRes = await query('SELECT balance FROM accounts WHERE id = $1', [p.from_account_id]);
-    const newSolde = parseFloat(compteClientRes.rows[0].balance) + parseFloat(p.amount);
-    await query('UPDATE accounts SET balance = $1, updated_at = NOW() WHERE id = $2', [newSolde, p.from_account_id]);
+    // Rembourser le client : carte de crédit → restaurer available_credit ; compte → restaurer solde
+    const carteRej = await query(
+      `SELECT id, available_credit FROM cards WHERE account_id = $1 AND card_type = 'credit'`,
+      [p.from_account_id]
+    );
+    let newSolde;
+    if (carteRej.rows[0]) {
+      const carte = carteRej.rows[0];
+      newSolde = parseFloat(carte.available_credit) + parseFloat(p.amount);
+      await query('UPDATE cards SET available_credit = available_credit + $1 WHERE id = $2', [p.amount, carte.id]);
+    } else {
+      const compteClientRes = await query('SELECT balance FROM accounts WHERE id = $1', [p.from_account_id]);
+      newSolde = parseFloat(compteClientRes.rows[0].balance) + parseFloat(p.amount);
+      await query('UPDATE accounts SET balance = $1, updated_at = NOW() WHERE id = $2', [newSolde, p.from_account_id]);
+    }
     await query(
       `INSERT INTO transactions (account_id, transaction_type, amount, balance_after, description, status)
        VALUES ($1, 'payment', $2, $3, $4, 'completed')`,

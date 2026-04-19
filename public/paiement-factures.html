@@ -373,7 +373,8 @@ function selectionnerGroupe(nomGroupe) {
 // Sélectionne un fournisseur et affiche le formulaire de paiement correspondant.
 function selectionnerFournisseur(id) {
     document.querySelectorAll('.fournisseur-btn').forEach(b => b.classList.remove('selected'));
-    document.getElementById(`btn-f-${id}`).classList.add('selected');
+    const btnF = document.getElementById(`btn-f-${id}`);
+    if (btnF) btnF.classList.add('selected');
 
     fournisseurSelectionne = fournisseursListe.find(f => f.id === id);
     document.getElementById('titreDetail').textContent = `Paiement — ${fournisseurSelectionne.nom}`;
