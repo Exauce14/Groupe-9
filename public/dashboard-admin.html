@@ -1181,13 +1181,15 @@
                     <td>${roleLabels[user.role] || 'Client'}</td>
                     <td><span class="badge ${si.cls}">${si.label}</span></td>
                     <td>${date}</td>
-                    <td onclick="event.stopPropagation()" style="display:flex;gap:6px;flex-wrap:wrap;">
-                        ${user.statut_compte === 'suspended'
-                            ? `<button class="btn btn-unblock" onclick="debloquerUtilisateur(${user.id},'${nom}')">🔓 Débloquer</button>`
-                            : user.statut_compte === 'active'
-                            ? `<button class="btn btn-block"   onclick="bloquerUtilisateur(${user.id},'${nom}')">🔒 Bloquer</button>`
-                            : ''}
-                        <button style="background:#fee2e2;color:#991b1b;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;"
+                    <td onclick="event.stopPropagation()" style="white-space:nowrap;">
+                        <div style="display:inline-block;width:110px;vertical-align:middle;">
+                            ${user.statut_compte === 'suspended'
+                                ? `<button class="btn btn-unblock" onclick="debloquerUtilisateur(${user.id},'${nom}')">🔓 Débloquer</button>`
+                                : user.statut_compte === 'active'
+                                ? `<button class="btn btn-block"   onclick="bloquerUtilisateur(${user.id},'${nom}')">🔒 Bloquer</button>`
+                                : ''}
+                        </div>
+                        <button style="background:#fee2e2;color:#991b1b;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;vertical-align:middle;"
                                 onclick="supprimerUtilisateur(${user.id},'${nom}','${user.email}')">🗑️ Supprimer</button>
                     </td>
                 </tr>`;
