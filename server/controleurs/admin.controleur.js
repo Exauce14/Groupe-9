@@ -866,12 +866,15 @@ exports.supprimerUtilisateur = async (req, res, next) => {
     if (!userRes.rows[0]) return res.status(404).json({ succes: false, message: 'Utilisateur introuvable.' });
     if (userRes.rows[0].role === 'admin') return res.status(400).json({ succes: false, message: 'Impossible de supprimer un compte admin.' });
 
-    // Supprimer en cascade (notifications, transactions, comptes, codes, demandes, cartes)
+    // Supprimer en cascade
     await query('DELETE FROM notifications WHERE user_id = $1', [userId]);
     await query('DELETE FROM verification_codes WHERE user_id = $1', [userId]);
+    await query('DELETE FROM requests WHERE user_id = $1', [userId]);
     await query(`DELETE FROM transactions WHERE account_id IN (SELECT id FROM accounts WHERE user_id = $1)`, [userId]);
     await query(`DELETE FROM cards WHERE account_id IN (SELECT id FROM accounts WHERE user_id = $1)`, [userId]);
-    await query('DELETE FROM requests WHERE user_id = $1', [userId]);
+    // Supprimer les virements Interac envoyés ou reçus par cet utilisateur
+    await query(`DELETE FROM interac_transfers WHERE sender_id = $1 OR recipient_id = $1`, [userId]);
+    await query(`DELETE FROM interac_transfers WHERE sender_account_id IN (SELECT id FROM accounts WHERE user_id = $1)`, [userId]);
     await query('DELETE FROM accounts WHERE user_id = $1', [userId]);
     await query('DELETE FROM users WHERE id = $1', [userId]);
 
