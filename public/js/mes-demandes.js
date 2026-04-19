@@ -456,11 +456,15 @@ function afficherAlerte(elementId, message, type) {
 }
 
 // Déconnecte l'utilisateur en supprimant le token et redirige vers la page de connexion.
-function deconnexion() {
-    if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
-        localStorage.removeItem('token');
-        window.location.href = 'index.html';
-    }
+async function deconnexion() {
+    const ok = await showConfirm('Voulez-vous vraiment vous déconnecter ?', {
+        title: 'Déconnexion',
+        confirmText: 'Se déconnecter',
+        cancelText: 'Rester connecté'
+    });
+    if (!ok) return;
+    localStorage.removeItem('token');
+    window.location.href = 'index.html';
 }
 
 // Initialiser au chargement

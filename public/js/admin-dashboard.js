@@ -452,17 +452,20 @@ async function chargerUtilisateurs() {
 }
 
 // Demande une raison via un prompt et bloque le compte de l'utilisateur via l'API admin.
-function bloquerUtilisateur(userId, userName) {
+async function bloquerUtilisateur(userId, userName) {
     const raison = prompt(`Bloquer le compte de ${userName}.\n\nRaison du blocage :`);
-    
+
     if (!raison || raison.trim().length < 2) {
         showToast('⚠️ Raison requise (minimum 2 caractères)');
         return;
     }
 
-    if (!confirm(`Confirmer le blocage du compte de ${userName} ?`)) {
-        return;
-    }
+    const ok = await showConfirm(`Confirmer le blocage du compte de <strong>${userName}</strong> ?`, {
+        title: 'Bloquer le compte',
+        type: 'warning',
+        confirmText: 'Bloquer'
+    });
+    if (!ok) return;
 
     fetch(`${API_URL}/admin/utilisateurs/${userId}/bloquer`, {
         method: 'POST',
@@ -489,10 +492,12 @@ function bloquerUtilisateur(userId, userName) {
 }
 
 // Demande une confirmation et réactive le compte suspendu de l'utilisateur via l'API admin.
-function debloquerUtilisateur(userId, userName) {
-    if (!confirm(`Débloquer le compte de ${userName} ?`)) {
-        return;
-    }
+async function debloquerUtilisateur(userId, userName) {
+    const ok = await showConfirm(`Débloquer le compte de <strong>${userName}</strong> ?`, {
+        title: 'Débloquer le compte',
+        confirmText: 'Débloquer'
+    });
+    if (!ok) return;
 
     fetch(`${API_URL}/admin/utilisateurs/${userId}/debloquer`, {
         method: 'POST',
@@ -559,7 +564,13 @@ function afficherSection(section) {
 }
 
 async function supprimerUtilisateur(userId, userName, email) {
-    if (!confirm(`⚠️ Supprimer définitivement le compte de ${userName} (${email}) ?\n\nToutes ses données seront effacées (comptes, transactions, cartes, demandes).\n\nCette action est irréversible.`)) return;
+    const ok = await showConfirm(
+        `Supprimer définitivement le compte de <strong>${userName}</strong> (${email}) ?<br><br>` +
+        `Toutes ses données seront effacées (comptes, transactions, cartes, demandes).<br>` +
+        `<strong>Cette action est irréversible.</strong>`,
+        { title: 'Supprimer le compte', type: 'danger', confirmText: 'Supprimer' }
+    );
+    if (!ok) return;
     try {
         const res = await fetch(`${API_URL}/admin/utilisateurs/${userId}`, {
             method: 'DELETE',
@@ -581,14 +592,16 @@ function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
 }
 
-function deconnexion() {
-    if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
-        localStorage.removeItem('token');
-        if (socket) {
-            socket.disconnect();
-        }
-        window.location.href = 'index.html';
-    }
+async function deconnexion() {
+    const ok = await showConfirm('Voulez-vous vraiment vous déconnecter ?', {
+        title: 'Déconnexion',
+        confirmText: 'Se déconnecter',
+        cancelText: 'Rester connecté'
+    });
+    if (!ok) return;
+    localStorage.removeItem('token');
+    if (socket) socket.disconnect();
+    window.location.href = 'index.html';
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -696,7 +709,11 @@ async function chargerToutesTransactions() {
 }
 
 async function annulerTransaction(id) {
-    if (!confirm(`Annuler la transaction #${id} ? Le solde du compte sera corrigé automatiquement.`)) return;
+    const ok = await showConfirm(
+        `Annuler la transaction <strong>#${id}</strong> ?<br>Le solde du compte sera corrigé automatiquement.`,
+        { title: 'Annuler la transaction', type: 'warning', confirmText: 'Annuler la transaction', cancelText: 'Garder' }
+    );
+    if (!ok) return;
     try {
         const res = await fetch(`${API_URL}/admin/transactions/${id}/annuler`, {
             method: 'POST',

@@ -206,11 +206,15 @@ function formatMontant(montant) {
 }
 
 // Déconnexion
-function deconnexion() {
-    if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
-        localStorage.removeItem('token');
-        window.location.href = 'index.html';
-    }
+async function deconnexion() {
+    const ok = await showConfirm('Voulez-vous vraiment vous déconnecter ?', {
+        title: 'Déconnexion',
+        confirmText: 'Se déconnecter',
+        cancelText: 'Rester connecté'
+    });
+    if (!ok) return;
+    localStorage.removeItem('token');
+    window.location.href = 'index.html';
 }
 
 // Initialiser
