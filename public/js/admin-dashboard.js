@@ -431,13 +431,14 @@ async function chargerUtilisateurs() {
                     <td>${user.revenu_annuel ? formatMontant(user.revenu_annuel) : 'N/A'}</td>
                     <td>${dateCreation}</td>
                     <td>${dateApprobation}</td>
-                    <td>
-                        ${user.statut_compte === 'suspended' 
+                    <td style="display:flex; gap:6px; flex-wrap:wrap;">
+                        ${user.statut_compte === 'suspended'
                             ? `<button class="btn btn-unblock" onclick="debloquerUtilisateur(${user.id}, '${user.prenom} ${user.nom}')">🔓 Débloquer</button>`
                             : user.statut_compte === 'active'
                             ? `<button class="btn btn-block" onclick="bloquerUtilisateur(${user.id}, '${user.prenom} ${user.nom}')">🔒 Bloquer</button>`
-                            : '-'
+                            : ''
                         }
+                        <button style="background:#fee2e2;color:#991b1b;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;" onclick="supprimerUtilisateur(${user.id}, '${user.prenom} ${user.nom}', '${user.email}')">🗑️ Supprimer</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -554,6 +555,21 @@ function afficherSection(section) {
         document.getElementById('sectionUtilisateurs').style.display = 'block';
         document.getElementById('navUtilisateurs').classList.add('active');
         chargerUtilisateurs();
+    }
+}
+
+async function supprimerUtilisateur(userId, userName, email) {
+    if (!confirm(`⚠️ Supprimer définitivement le compte de ${userName} (${email}) ?\n\nToutes ses données seront effacées (comptes, transactions, cartes, demandes).\n\nCette action est irréversible.`)) return;
+    try {
+        const res = await fetch(`${API_URL}/admin/utilisateurs/${userId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        showToast(data.message, data.succes ? 'success' : 'error');
+        if (data.succes) chargerUtilisateurs();
+    } catch (e) {
+        showToast('Erreur lors de la suppression.', 'error');
     }
 }
 

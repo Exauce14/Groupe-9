@@ -25,6 +25,7 @@ router.post('/demandes/:demandeId/rejeter', adminControleur.rejeterDemande);
 router.get('/utilisateurs', adminControleur.tousLesUtilisateurs);
 router.post('/utilisateurs/:userId/bloquer', adminControleur.bloquerUtilisateur);
 router.post('/utilisateurs/:userId/debloquer', adminControleur.debloquerUtilisateur);
+router.delete('/utilisateurs/:userId', adminControleur.supprimerUtilisateur);
 
 // Toutes les transactions + annulation
 router.get('/transactions', adminControleur.toutesTransactions);

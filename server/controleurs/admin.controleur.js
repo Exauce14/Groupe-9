@@ -852,6 +852,36 @@ exports.rejeterRetrait = async (req, res, next) => {
   }
 };
 
+// Supprimer un utilisateur et toutes ses données associées
+exports.supprimerUtilisateur = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const adminId = req.user.id;
+
+    if (parseInt(userId) === adminId) {
+      return res.status(400).json({ succes: false, message: 'Impossible de supprimer votre propre compte.' });
+    }
+
+    const userRes = await query('SELECT id, email, role FROM users WHERE id = $1', [userId]);
+    if (!userRes.rows[0]) return res.status(404).json({ succes: false, message: 'Utilisateur introuvable.' });
+    if (userRes.rows[0].role === 'admin') return res.status(400).json({ succes: false, message: 'Impossible de supprimer un compte admin.' });
+
+    // Supprimer en cascade (notifications, transactions, comptes, codes, demandes, cartes)
+    await query('DELETE FROM notifications WHERE user_id = $1', [userId]);
+    await query('DELETE FROM verification_codes WHERE user_id = $1', [userId]);
+    await query(`DELETE FROM transactions WHERE account_id IN (SELECT id FROM accounts WHERE user_id = $1)`, [userId]);
+    await query(`DELETE FROM cards WHERE account_id IN (SELECT id FROM accounts WHERE user_id = $1)`, [userId]);
+    await query('DELETE FROM requests WHERE user_id = $1', [userId]);
+    await query('DELETE FROM accounts WHERE user_id = $1', [userId]);
+    await query('DELETE FROM users WHERE id = $1', [userId]);
+
+    res.json({ succes: true, message: `Compte supprimé avec succès.` });
+  } catch (error) {
+    console.error('Erreur suppression utilisateur:', error);
+    next(error);
+  }
+};
+
 // Retourne toutes les transactions avec filtres optionnels
 exports.toutesTransactions = async (req, res, next) => {
   try {
