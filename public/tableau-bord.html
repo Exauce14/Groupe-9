@@ -678,10 +678,11 @@ async function afficherHistorique(compteId, numeroCompte, typeCompte) {
         const typeLabels = {
             'checking': 'Compte Chèques',
             'savings': 'Compte Épargne',
-            'investment': 'Compte Placement'
+            'investment': 'Compte Placement',
+            'credit_card': 'Carte de Crédit'
         };
 
-        document.getElementById('historiqueTitle').textContent = `Historique - ${typeLabels[typeCompte]}`;
+        document.getElementById('historiqueTitle').textContent = `Historique - ${typeLabels[typeCompte] || typeCompte}`;
         document.getElementById('historiqueSubtitle').textContent = `Compte: ${numeroCompte}`;
 
         const tbody = document.getElementById('transactionsList');
@@ -799,8 +800,10 @@ function fermerModalHistorique() {
                         const creditDisponible = limiteCredit - soldeUtilise;
                         const pourcentageUtilise = limiteCredit > 0 ? ((soldeUtilise / limiteCredit) * 100).toFixed(1) : 0;
 
+                        const accountId = carteCredit.account_id;
+                        const numeroCarte = carteCredit.numero_carte;
                         document.getElementById('carteCreditCard').innerHTML = `
-                            <div class="carte-credit-card">
+                            <div class="carte-credit-card" onclick="afficherHistorique(${accountId}, '${numeroCarte}', 'credit_card')" style="cursor:pointer;" title="Cliquez pour voir l'historique">
                                 <div class="carte-credit-header">
                                     <div class="carte-credit-type">Carte de Crédit</div>
                                     <div class="carte-credit-icon">💳</div>
@@ -825,6 +828,7 @@ function fermerModalHistorique() {
                                         <div class="value">${pourcentageUtilise}%</div>
                                     </div>
                                 </div>
+                                <div style="margin-top:12px; font-size:13px; color:#667eea; font-weight:600;">📊 Cliquez pour voir l'historique</div>
                             </div>
                         `;
                     }
@@ -843,8 +847,9 @@ function fermerModalHistorique() {
         }
 
 // Déconnecte l'utilisateur en supprimant le token, ferme le WebSocket et redirige vers la connexion.
-        function deconnexion() {
-            if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
+        async function deconnexion() {
+            const ok = await showConfirm('', { title: 'Voulez-vous vraiment vous déconnecter ?', confirmText: 'Déconnecter', cancelText: 'Annuler' });
+            if (ok) {
                 localStorage.removeItem('token');
                 if (socket) {
                     socket.disconnect();

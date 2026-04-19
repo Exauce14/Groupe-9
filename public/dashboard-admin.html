@@ -444,6 +444,8 @@
             <a href="#" onclick="afficherSection('transactions')" id="navTransactions">💵 Dépôts/Retraits</a>
             <a href="#" onclick="afficherSection('entreprises')" id="navEntreprises">🏢 Entreprises</a>
             <a href="#" onclick="afficherSection('fournisseurs')" id="navFournisseurs">🏪 Fournisseurs</a>
+            <a href="#" onclick="afficherSection('planifies')" id="navPlanifies">📅 Planifiés</a>
+            <a href="#" onclick="afficherSection('interac')" id="navInterac">💸 Interac</a>
             <button class="btn-logout" onclick="deconnexion()">Déconnexion</button>
         </div>
     </nav>
@@ -641,6 +643,32 @@
             </div>
         </div>
 
+        <!-- SECTION PAIEMENTS PLANIFIÉS -->
+        <div id="sectionPlanifies" style="display: none;">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>Paiements planifiés actifs</h2>
+                    <button onclick="chargerPlanifiesAdmin()" style="background:#f3f4f6;border:1.5px solid #e5e7eb;color:#374151;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Actualiser</button>
+                </div>
+                <div id="planifiesAdminContainer">
+                    <p style="color:#9ca3af; text-align:center; padding:30px;">Chargement...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION INTERAC EN ATTENTE -->
+        <div id="sectionInterac" style="display: none;">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>Virements Interac en attente</h2>
+                    <button onclick="chargerInteracPending()" style="background:#f3f4f6;border:1.5px solid #e5e7eb;color:#374151;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Actualiser</button>
+                </div>
+                <div id="interacPendingContainer">
+                    <p style="color:#9ca3af; text-align:center; padding:30px;">Chargement...</p>
+                </div>
+            </div>
+        </div>
+
         <!-- SECTION FOURNISSEURS -->
         <div id="sectionFournisseurs" style="display: none;">
             <div class="section-card">
@@ -799,18 +827,28 @@
             document.getElementById('sectionFournisseurs').style.display = 'block';
             document.getElementById('navFournisseurs').classList.add('active');
             chargerFournisseursAdmin();
+        } else if (nom === 'interac') {
+            masquerToutesLessections();
+            document.getElementById('sectionInterac').style.display = 'block';
+            document.getElementById('navInterac').classList.add('active');
+            chargerInteracPending();
+        } else if (nom === 'planifies') {
+            masquerToutesLessections();
+            document.getElementById('sectionPlanifies').style.display = 'block';
+            document.getElementById('navPlanifies').classList.add('active');
+            chargerPlanifiesAdmin();
         }
     }
 
     // Masque toutes les sections de la page et retire la classe active de tous les liens de navigation.
     function masquerToutesLessections() {
         ['sectionDashboard','sectionInscriptions','sectionDemandes','sectionUtilisateurs',
-         'sectionTransactions','sectionEntreprises','sectionFournisseurs'].forEach(id => {
+         'sectionTransactions','sectionEntreprises','sectionFournisseurs','sectionInterac','sectionPlanifies'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
         ['navDashboard','navInscriptions','navDemandes','navUtilisateurs',
-         'navTransactions','navEntreprises','navFournisseurs'].forEach(id => {
+         'navTransactions','navEntreprises','navFournisseurs','navInterac','navPlanifies'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.classList.remove('active');
         });
@@ -818,12 +856,109 @@
 
     // Surcharger afficherSection pour inclure les nouvelles
     window.afficherSection = function(nom) {
-        if (['transactions', 'entreprises', 'fournisseurs'].includes(nom)) {
+        if (['transactions', 'entreprises', 'fournisseurs', 'interac', 'planifies'].includes(nom)) {
             afficherSectionEtendue(nom);
         } else if (_origAfficherSection) {
             _origAfficherSection(nom);
         }
     };
+
+    // Charge et affiche tous les paiements planifiés actifs (vue admin).
+    async function chargerPlanifiesAdmin() {
+        const token = localStorage.getItem('token');
+        const container = document.getElementById('planifiesAdminContainer');
+        container.innerHTML = '<p style="color:#9ca3af; text-align:center; padding:30px;">Chargement...</p>';
+        try {
+            const res = await fetch('/api/admin/paiements-planifies', { headers: { Authorization: `Bearer ${token}` } });
+            const data = await res.json();
+            if (!data.succes || data.paiements.length === 0) {
+                container.innerHTML = '<p style="color:#9ca3af; text-align:center; padding:30px;">✅ Aucun paiement planifié actif</p>';
+                return;
+            }
+            const freqLabels = { once: 'Une fois', weekly: 'Hebdo', biweekly: 'Aux 2 sem.', monthly: 'Mensuel' };
+            container.innerHTML = `<table style="width:100%; border-collapse:collapse;">
+                <thead><tr style="background:#f9fafb;">
+                    <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Client</th>
+                    <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Destinataire</th>
+                    <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Montant</th>
+                    <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Fréquence</th>
+                    <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Prochain</th>
+                    <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Compte source</th>
+                </tr></thead>
+                <tbody>${data.paiements.map(p => {
+                    const montant = new Intl.NumberFormat('fr-CA', { style:'currency', currency:'CAD' }).format(p.montant);
+                    const prochain = new Date(p.prochaine_execution).toLocaleDateString('fr-CA', { day:'numeric', month:'short', year:'numeric' });
+                    const dest = p.fournisseur || p.compte_destinataire || '—';
+                    return `<tr style="border-bottom:1px solid #f3f4f6;">
+                        <td style="padding:12px;">${p.client}<div style="font-size:11px;color:#9ca3af;">${p.email_client}</div></td>
+                        <td style="padding:12px;">${dest}</td>
+                        <td style="padding:12px;font-weight:700;color:#4f46e5;">${montant}</td>
+                        <td style="padding:12px;">${freqLabels[p.frequence] || p.frequence}</td>
+                        <td style="padding:12px;font-size:13px;color:#6b7280;">${prochain}</td>
+                        <td style="padding:12px;font-size:13px;color:#6b7280;">${p.compte_source}</td>
+                    </tr>`;
+                }).join('')}</tbody>
+            </table>`;
+        } catch (e) {
+            container.innerHTML = '<p style="color:#ef4444; text-align:center; padding:30px;">Erreur lors du chargement</p>';
+        }
+    }
+
+    // Charge et affiche les virements Interac en attente de dépôt.
+    async function chargerInteracPending() {
+        const token = localStorage.getItem('token');
+        const container = document.getElementById('interacPendingContainer');
+        container.innerHTML = '<p style="color:#9ca3af; text-align:center; padding:30px;">Chargement...</p>';
+        try {
+            const res = await fetch('/api/admin/interac-pending', { headers: { Authorization: `Bearer ${token}` } });
+            const data = await res.json();
+            if (!data.succes || data.virements.length === 0) {
+                container.innerHTML = '<p style="color:#9ca3af; text-align:center; padding:30px;">✅ Aucun virement Interac en attente</p>';
+                return;
+            }
+            const statusBadge = '<span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">En attente</span>';
+            container.innerHTML = `<table style="width:100%; border-collapse:collapse;">
+                <thead><tr style="background:#f9fafb;">
+                    <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Expéditeur</th>
+                    <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Destinataire</th>
+                    <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Montant</th>
+                    <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Date</th>
+                    <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Statut</th>
+                    <th style="padding:12px;text-align:left;border-bottom:2px solid #e5e7eb;">Action</th>
+                </tr></thead>
+                <tbody>${data.virements.map(v => {
+                    const date = new Date(v.created_at).toLocaleDateString('fr-CA', { day:'numeric', month:'short', year:'numeric' });
+                    const montant = new Intl.NumberFormat('fr-CA', { style:'currency', currency:'CAD' }).format(v.amount);
+                    const dest = v.destinataire ? `${v.destinataire} (${v.recipient_email})` : v.recipient_email;
+                    return `<tr style="border-bottom:1px solid #f3f4f6;">
+                        <td style="padding:12px;">${v.expediteur}<div style="font-size:11px;color:#9ca3af;">${v.compte_expediteur}</div></td>
+                        <td style="padding:12px;">${dest}</td>
+                        <td style="padding:12px;font-weight:700;color:#4f46e5;">${montant}</td>
+                        <td style="padding:12px;color:#6b7280;font-size:13px;">${date}</td>
+                        <td style="padding:12px;">${statusBadge}</td>
+                        <td style="padding:12px;">
+                            <button onclick="annulerInteracAdmin(${v.id})" style="background:#ef4444;color:white;border:none;padding:7px 14px;border-radius:7px;font-weight:600;cursor:pointer;font-size:13px;">Annuler</button>
+                        </td>
+                    </tr>`;
+                }).join('')}</tbody>
+            </table>`;
+        } catch (e) {
+            container.innerHTML = '<p style="color:#ef4444; text-align:center; padding:30px;">Erreur lors du chargement</p>';
+        }
+    }
+
+    // Annule un virement Interac en attente depuis le panneau admin et rembourse l'expéditeur.
+    async function annulerInteracAdmin(interacId) {
+        const ok = await showConfirm('Le montant sera remboursé sur le compte de l\'expéditeur.', { type: 'warning', title: 'Annuler ce virement Interac ?', confirmText: 'Oui, annuler', cancelText: 'Non' });
+        if (!ok) return;
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`/api/admin/interac/${interacId}/annuler`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+            const data = await res.json();
+            if (data.succes) { showToast('Virement annulé et montant remboursé.'); chargerInteracPending(); }
+            else showToast(data.message || 'Erreur lors de l\'annulation.');
+        } catch (e) { showToast('Erreur réseau.'); }
+    }
 
     // Charge et affiche les dépôts et retraits en attente d'approbation dans la section transactions.
     async function chargerTransactionsPending() {
@@ -1483,7 +1618,7 @@
                     <select id="pf_residence" style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
                         <option value="">— Sélectionner —</option>
                         <option value="owner">Propriétaire</option>
-                        <option value="renter">Locataire</option>
+                        <option value="tenant">Locataire</option>
                         <option value="other">Autre</option>
                     </select>
                 </div>

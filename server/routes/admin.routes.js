@@ -41,6 +41,13 @@ router.post('/transactions/:transactionId/rejeter-retrait', adminControleur.reje
 // Comptes entreprise
 router.get('/comptes-entreprise', adminControleur.comptesEntreprise);
 
+// Virements Interac en attente
+router.get('/interac-pending', adminControleur.interacPending);
+router.post('/interac/:interacId/annuler', adminControleur.annulerInteracAdmin);
+
+// Paiements planifiés
+router.get('/paiements-planifies', adminControleur.paiementsPlanifies);
+
 // Détail utilisateur + transactions + modifier + reset password
 router.get('/utilisateurs/:userId/detail', adminControleur.detailUtilisateur);
 router.get('/utilisateurs/:userId/transactions', adminControleur.transactionsUtilisateur);

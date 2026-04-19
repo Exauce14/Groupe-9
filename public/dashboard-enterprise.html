@@ -354,7 +354,8 @@ function afficherPending() {
 
 // Approuve un paiement en attente et crédite le montant sur le compte de l'entreprise.
 async function approuver(paiementId) {
-    if (!confirm('Approuver ce paiement et créditer votre compte ?')) return;
+    const ok = await showConfirm('Le montant sera crédité sur votre compte.', { type: 'default', title: 'Approuver ce paiement ?', confirmText: 'Approuver', cancelText: 'Annuler' });
+    if (!ok) return;
     try {
         const res = await fetch(`${API_URL}/fournisseurs/enterprise/paiements/${paiementId}/approuver`, {
             method: 'POST', headers: { Authorization: `Bearer ${token}` }
@@ -373,7 +374,8 @@ async function approuver(paiementId) {
 
 // Rejette un paiement en attente et rembourse le client sur son compte source.
 async function rejeter(paiementId) {
-    if (!confirm('Rejeter ce paiement ? Le client sera remboursé.')) return;
+    const ok = await showConfirm('Le client sera remboursé sur son compte source.', { type: 'danger', title: 'Rejeter ce paiement ?', confirmText: 'Rejeter', cancelText: 'Annuler' });
+    if (!ok) return;
     try {
         const res = await fetch(`${API_URL}/fournisseurs/enterprise/paiements/${paiementId}/rejeter`, {
             method: 'POST', headers: { Authorization: `Bearer ${token}` }
@@ -622,11 +624,9 @@ async function ouvrirModalNotifs() {
 }
 
 // Déconnecte l'utilisateur en supprimant le token et redirige vers la page de connexion.
-function deconnexion() {
-    if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
-        localStorage.removeItem('token');
-        window.location.href = 'index.html';
-    }
+async function deconnexion() {
+    const ok = await showConfirm('', { title: 'Voulez-vous vraiment vous déconnecter ?', confirmText: 'Déconnecter', cancelText: 'Annuler' });
+    if (ok) { localStorage.removeItem('token'); window.location.href = 'index.html'; }
 }
 
 // Fermer modal au clic extérieur

@@ -126,6 +126,10 @@
 
     <!-- Notification si virement en attente -->
     <div id="interacPendingSection"></div>
+    <div id="interacEnvoyesPendingBanner" style="display:none; background:#fffbeb; border:1.5px solid #fbbf24; border-radius:12px; padding:14px 20px; margin-bottom:16px; display:none; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div>⏳ <strong id="bannerNbPending"></strong> virement(s) Interac en attente d'acceptation par le destinataire.</div>
+        <button onclick="switchTab('envoyes')" style="background:#f59e0b; color:white; border:none; padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; white-space:nowrap;">Voir & annuler →</button>
+    </div>
 
     <div class="tabs">
         <div class="tab active" id="tabEnvoyer" onclick="switchTab('envoyer')">📤 Envoyer</div>
@@ -351,6 +355,23 @@ async function verifierVirementPending() {
     `;
 }
 
+// Vérifie si l'utilisateur a des virements Interac envoyés encore en attente et affiche une bannière.
+async function verifierVirementsEnvoyesPending() {
+    try {
+        const res = await fetch(`${API_URL}/interac/mes-envoyes`, { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+        if (!data.succes) return;
+        const pending = data.virements.filter(v => v.statut === 'pending');
+        const banner = document.getElementById('interacEnvoyesPendingBanner');
+        if (pending.length > 0) {
+            document.getElementById('bannerNbPending').textContent = pending.length;
+            banner.style.display = 'flex';
+        } else {
+            banner.style.display = 'none';
+        }
+    } catch (e) {}
+}
+
 // Ouvre la modale de sélection de l'institution bancaire pour déposer un virement reçu.
 function ouvrirSelectionBanque() {
     const grid = document.getElementById('banksGrid');
@@ -500,8 +521,8 @@ async function chargerVirementsEnvoyes() {
         const statusLabels = { pending: 'En attente', deposited: 'Déposé', cancelled: 'Annulé', expired: 'Expiré' };
         liste.innerHTML = data.virements.map(v => {
             const date = new Date(v.cree_le).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short', year: 'numeric' });
-            const badge = `<span class="badge badge-${v.status}">${statusLabels[v.status] || v.status}</span>`;
-            const annulerBtn = v.status === 'pending'
+            const badge = `<span class="badge badge-${v.statut}">${statusLabels[v.statut] || v.statut}</span>`;
+            const annulerBtn = v.statut === 'pending'
                 ? `<button class="btn-annuler-interac" onclick="annulerVirement(${v.id})">Annuler</button>`
                 : '';
             return `
@@ -524,7 +545,8 @@ async function chargerVirementsEnvoyes() {
 
 // Annule un virement Interac en attente et rembourse le montant sur le compte source.
 async function annulerVirement(interacId) {
-    if (!confirm('Annuler ce virement Interac ? Le montant sera remboursé sur votre compte.')) return;
+    const ok = await showConfirm('Le montant sera remboursé sur votre compte.', { type: 'warning', title: 'Annuler ce virement Interac ?', confirmText: 'Oui, annuler', cancelText: 'Non' });
+    if (!ok) return;
     const res = await fetch(`${API_URL}/interac/${interacId}/annuler`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
@@ -533,6 +555,7 @@ async function annulerVirement(interacId) {
     if (data.succes) {
         chargerVirementsEnvoyes();
         chargerComptes();
+        verifierVirementsEnvoyesPending();
     } else {
         showToast(data.message || 'Impossible d\'annuler ce virement.');
     }
@@ -633,7 +656,8 @@ async function ajouterBeneficiaire() {
 
 // Supprime un bénéficiaire de la liste de l'utilisateur après confirmation.
 async function supprimerBeneficiaire(id) {
-    if (!confirm('Supprimer ce bénéficiaire ?')) return;
+    const ok = await showConfirm('Cette action est irréversible.', { type: 'danger', title: 'Supprimer ce bénéficiaire ?', confirmText: 'Supprimer', cancelText: 'Annuler' });
+    if (!ok) return;
     await fetch(`${API_URL}/interac/beneficiaires/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     chargerBeneficiaires();
 }
@@ -656,14 +680,16 @@ function formatMontant(n) {
 }
 
 // Déconnecte l'utilisateur en supprimant le token et redirige vers la page de connexion.
-function deconnexion() {
-    if (confirm('Voulez-vous vraiment vous déconnecter ?')) { localStorage.removeItem('token'); window.location.href = 'index.html'; }
+async function deconnexion() {
+    const ok = await showConfirm('', { title: 'Voulez-vous vraiment vous déconnecter ?', confirmText: 'Déconnecter', cancelText: 'Annuler' });
+    if (ok) { localStorage.removeItem('token'); window.location.href = 'index.html'; }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     chargerComptes();
     chargerBeneficiaires(); // charger dès le départ pour le sélecteur
     verifierVirementPending();
+    verifierVirementsEnvoyesPending();
     // Touche Enter sur les champs du formulaire d'envoi
     ['destinataireEmail', 'montant', 'questionSecurite', 'reponseSecurite', 'messageInterac'].forEach(id => {
         const el = document.getElementById(id);

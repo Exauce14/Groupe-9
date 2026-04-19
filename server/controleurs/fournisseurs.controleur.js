@@ -82,6 +82,9 @@ exports.payerFacture = async (req, res, next) => {
     // Débiter le client (toujours — l'argent est "retenu")
     const newSoldeClient = soldeSource - montant;
     await query('UPDATE accounts SET balance = $1, updated_at = NOW() WHERE id = $2', [newSoldeClient, sourceId]);
+    if (carteId) {
+      await query('UPDATE cards SET available_credit = available_credit - $1 WHERE id = $2', [montant, carteId]);
+    }
     const desc = description || `Paiement ${fournisseur.nom}${numeroReference ? ' - Réf: ' + numeroReference : ''}`;
 
     // Si fournisseur sans compte entreprise → paiement immédiat (externe)

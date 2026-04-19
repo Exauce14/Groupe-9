@@ -13,6 +13,7 @@ exports.obtenirCartesUtilisateur = async (utilisateurId) => {
       c.credit_limit AS limite_credit,
       c.available_credit AS credit_disponible,
       c.created_at AS date_creation,
+      c.account_id,
       a.account_type AS type_compte,
       a.account_number AS numero_compte,
       COALESCE(c.credit_limit - c.available_credit, 0) AS solde_utilise

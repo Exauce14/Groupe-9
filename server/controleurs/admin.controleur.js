@@ -976,13 +976,27 @@ exports.annulerTransaction = async (req, res, next) => {
     newSolde = typeCredit ? newSolde - montant : newSolde + montant;
 
     await query('UPDATE accounts SET balance = $1, updated_at = NOW() WHERE id = $2', [newSolde, txn.compte_id]);
-    await query(`UPDATE transactions SET status = 'cancelled', approved_by = $1, updated_at = NOW() WHERE id = $2`, [adminId, transactionId]);
+    await query(`UPDATE transactions SET status = 'cancelled', approved_by = $1, approved_at = NOW() WHERE id = $2`, [adminId, transactionId]);
     await query(
       `INSERT INTO transactions (account_id, transaction_type, amount, balance_after, description, status)
        VALUES ($1, $2, $3, $4, $5, 'completed')`,
       [txn.compte_id, typeCredit ? 'withdrawal' : 'deposit', montant, newSolde,
        `Annulation admin - Transaction #${transactionId}`]
     );
+
+    // Si le compte est lié à une carte de crédit, remettre le crédit disponible
+    const carteRes = await query(
+      `SELECT id, available_credit FROM cards WHERE account_id = $1 AND card_type = 'credit'`,
+      [txn.compte_id]
+    );
+    if (carteRes.rows[0]) {
+      const carte = carteRes.rows[0];
+      // Annulation d'un paiement (débit) → on rend le crédit ; annulation d'un dépôt → on retire
+      const newCredit = typeCredit
+        ? parseFloat(carte.available_credit) - montant
+        : parseFloat(carte.available_credit) + montant;
+      await query('UPDATE cards SET available_credit = $1 WHERE id = $2', [newCredit, carte.id]);
+    }
 
     res.json({ succes: true, message: `Transaction #${transactionId} annulée et solde corrigé.` });
   } catch (error) { next(error); }
@@ -1115,7 +1129,7 @@ exports.resetPassword = async (req, res, next) => {
     for (let i = 0; i < 10; i++) tempPassword += chars[Math.floor(Math.random() * chars.length)];
 
     const hash = await bcrypt.hash(tempPassword, 10);
-    await query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hash, userId]);
+    await query('UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2', [hash, userId]);
 
     // Notification interne
     await notificationModel.creer({
@@ -1127,5 +1141,83 @@ exports.resetPassword = async (req, res, next) => {
     await emailUtils.envoyerCode2FA(email, prenom, tempPassword);
 
     res.json({ succes: true, message: `Mot de passe réinitialisé. Email envoyé à ${email}.`, tempPassword });
+  } catch (error) { next(error); }
+};
+
+// ─── Virements Interac en attente (admin) ────────────────────────────────────
+exports.interacPending = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT it.id, it.amount, it.status, it.created_at, it.expires_at,
+              it.recipient_email, it.message,
+              u.first_name || ' ' || u.last_name AS expediteur,
+              a.account_number AS compte_expediteur,
+              COALESCE(ur.first_name || ' ' || ur.last_name, NULL) AS destinataire
+       FROM interac_transfers it
+       JOIN users u ON it.sender_id = u.id
+       JOIN accounts a ON it.sender_account_id = a.id
+       LEFT JOIN users ur ON it.recipient_id = ur.id
+       WHERE it.status = 'pending'
+       ORDER BY it.created_at DESC`
+    );
+    res.json({ succes: true, virements: result.rows });
+  } catch (error) { next(error); }
+};
+
+// ─── Annuler un virement Interac (admin) ─────────────────────────────────────
+exports.annulerInteracAdmin = async (req, res, next) => {
+  try {
+    const { interacId } = req.params;
+    const interacRes = await query(
+      `SELECT id, amount, sender_account_id, sender_id, status
+       FROM interac_transfers WHERE id = $1`,
+      [interacId]
+    );
+    if (!interacRes.rows[0]) return res.status(404).json({ succes: false, message: 'Virement introuvable.' });
+    const it = interacRes.rows[0];
+    if (it.status !== 'pending') return res.status(400).json({ succes: false, message: 'Ce virement ne peut plus être annulé.' });
+
+    const compteRes = await query('SELECT balance FROM accounts WHERE id = $1', [it.sender_account_id]);
+    const newSolde = parseFloat(compteRes.rows[0].balance) + parseFloat(it.amount);
+    await query('UPDATE accounts SET balance = $1, updated_at = NOW() WHERE id = $2', [newSolde, it.sender_account_id]);
+    await query(
+      `INSERT INTO transactions (account_id, transaction_type, amount, balance_after, description, status)
+       VALUES ($1, 'transfer', $2, $3, 'Annulation virement Interac par admin — remboursement', 'completed')`,
+      [it.sender_account_id, it.amount, newSolde]
+    );
+    await query(`UPDATE interac_transfers SET status = 'cancelled' WHERE id = $1`, [interacId]);
+
+    await notificationModel.creer({
+      utilisateurId: it.sender_id,
+      type: 'transfer_completed',
+      titre: 'Virement Interac annulé',
+      message: `Votre virement Interac de ${parseFloat(it.amount).toFixed(2)} $ a été annulé par un administrateur. Le montant a été remboursé.`,
+      lien: '/virement-interac.html'
+    });
+
+    res.json({ succes: true, message: 'Virement annulé et montant remboursé.' });
+  } catch (error) { next(error); }
+};
+
+// ─── Paiements planifiés (admin) ─────────────────────────────────────────────
+exports.paiementsPlanifies = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT sp.id, sp.amount AS montant, sp.frequency AS frequence,
+              sp.next_execution_date AS prochaine_execution, sp.end_date AS date_fin,
+              sp.description, sp.is_active AS actif, sp.created_at,
+              u.first_name || ' ' || u.last_name AS client,
+              u.email AS email_client,
+              a.account_number AS compte_source,
+              p.name AS fournisseur,
+              sp.to_account_number AS compte_destinataire
+       FROM scheduled_payments sp
+       JOIN users u ON sp.user_id = u.id
+       JOIN accounts a ON sp.from_account_id = a.id
+       LEFT JOIN providers p ON sp.provider_id = p.id
+       WHERE sp.is_active = true
+       ORDER BY sp.created_at DESC`
+    );
+    res.json({ succes: true, paiements: result.rows });
   } catch (error) { next(error); }
 };

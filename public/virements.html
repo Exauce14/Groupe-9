@@ -202,11 +202,9 @@ function formatMontant(n) {
     return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(n);
 }
 
-function deconnexion() {
-    if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
-        localStorage.removeItem('token');
-        window.location.href = 'index.html';
-    }
+async function deconnexion() {
+    const ok = await showConfirm('', { title: 'Voulez-vous vraiment vous déconnecter ?', confirmText: 'Déconnecter', cancelText: 'Annuler' });
+    if (ok) { localStorage.removeItem('token'); window.location.href = 'index.html'; }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

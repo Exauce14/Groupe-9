@@ -70,7 +70,8 @@ function creerSelectCompte(containerId, comptes, labels, onChangeFn) {
         opt.addEventListener('click', (e) => {
             e.stopPropagation();
             const id     = parseInt(opt.dataset.id);
-            const compte = comptes.find(c => c.id === id);
+            const type   = opt.dataset.type;
+            const compte = comptes.find(c => c.id === id && c.type_compte === type);
             if (!compte) return;
 
             container._selectedId    = compte.id;

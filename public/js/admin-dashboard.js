@@ -130,10 +130,10 @@ async function chargerInscriptions() {
                     <td>${formatMontant(user.revenu_annuel)}</td>
                     <td>${dateInscriptionFormatee}</td>
                     <td>
-                        <button class="btn btn-approve" onclick="approuverInscription(${user.id}, '${user.prenom} ${user.nom}')">
+                        <button class="btn btn-approve" onclick="approuverInscription(${user.id}, '${(user.prenom + ' ' + user.nom).replace(/'/g, "\\'")}')">
                             Approuver
                         </button>
-                        <button class="btn btn-reject" onclick="rejeterInscription(${user.id}, '${user.prenom} ${user.nom}')">
+                        <button class="btn btn-reject" onclick="rejeterInscription(${user.id}, '${(user.prenom + ' ' + user.nom).replace(/'/g, "\\'")}')">
                             Rejeter
                         </button>
                     </td>
@@ -282,10 +282,10 @@ async function chargerDemandes() {
                     <td>${formatMontant(demande.revenu_annuel)}</td>
                     <td>${dateDemande}</td>
                     <td>
-                        <button class="btn btn-approve" onclick="approuverDemande(${demande.id}, '${demande.prenom} ${demande.nom}', '${typeLabel}')">
+                        <button class="btn btn-approve" onclick="approuverDemande(${demande.id}, '${(demande.prenom + ' ' + demande.nom).replace(/'/g, "\\'")}', '${typeLabel}')">
                             Approuver
                         </button>
-                        <button class="btn btn-reject" onclick="rejeterDemande(${demande.id}, '${demande.prenom} ${demande.nom}', '${typeLabel}')">
+                        <button class="btn btn-reject" onclick="rejeterDemande(${demande.id}, '${(demande.prenom + ' ' + demande.nom).replace(/'/g, "\\'")}', '${typeLabel}')">
                             Rejeter
                         </button>
                     </td>
@@ -707,8 +707,8 @@ async function chargerToutesTransactions() {
 
 async function annulerTransaction(id) {
     const ok = await showConfirm(
-        `Annuler la transaction <strong>#${id}</strong> ?<br>Le solde du compte sera corrigé automatiquement.`,
-        { title: 'Annuler la transaction', type: 'warning', confirmText: 'Annuler la transaction', cancelText: 'Garder' }
+        `Le solde du compte sera corrigé automatiquement.`,
+        { title: `Annuler la transaction #${id} ?`, type: 'warning', confirmText: 'Oui, annuler', cancelText: 'Non' }
     );
     if (!ok) return;
     try {
