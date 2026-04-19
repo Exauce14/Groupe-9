@@ -1,0 +1,139 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.3.0 Chrome/140.0.7339.249 Electron/38.7.2 Safari/537.36" version="29.3.0">
+  <diagram name="Cas d&#39;utilisation - Banque" id="use-case-diagram">
+    <mxGraphModel dx="1011" dy="501" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="client" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Client" vertex="1">
+          <mxGeometry height="60" width="30" x="80" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="admin" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Administrateur" vertex="1">
+          <mxGeometry height="60" width="30" x="80" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="email" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Système Email" vertex="1">
+          <mxGeometry height="60" width="30" x="1400" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="pkg_auth" parent="1" style="shape=rectangle;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;verticalAlign=top;fontSize=14;fontStyle=1" value="Authentification &amp;amp; Sécurité" vertex="1">
+          <mxGeometry height="300" width="400" x="200" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="uc01" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="S&#39;inscrire" vertex="1">
+          <mxGeometry height="50" width="120" x="240" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="uc02" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Se connecter" vertex="1">
+          <mxGeometry height="50" width="120" x="240" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="uc03" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Vérifier code 2FA" vertex="1">
+          <mxGeometry height="50" width="120" x="440" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="uc04" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Renvoyer code 2FA" vertex="1">
+          <mxGeometry height="50" width="120" x="440" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="uc05" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Se déconnecter" vertex="1">
+          <mxGeometry height="50" width="120" x="240" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="uc06" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Gérer expiration&#xa;session" vertex="1">
+          <mxGeometry height="50" width="120" x="440" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="uc07" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Bloquer compte&#xa;après tentatives" vertex="1">
+          <mxGeometry height="50" width="120" x="440" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="pkg_comptes" parent="1" style="shape=rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;fontSize=14;fontStyle=1" value="Gestion des Comptes" vertex="1">
+          <mxGeometry height="300" width="400" x="650" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="uc08" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Consulter tableau&#xa;de bord" vertex="1">
+          <mxGeometry height="50" width="140" x="690" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="uc09" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Voir détails&#xa;d&#39;un compte" vertex="1">
+          <mxGeometry height="50" width="140" x="690" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="uc10" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Voir historique&#xa;transactions" vertex="1">
+          <mxGeometry height="50" width="140" x="690" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="uc11" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Créer nouveau&#xa;compte" vertex="1">
+          <mxGeometry height="50" width="140" x="870" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="uc12" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Fermer un compte" vertex="1">
+          <mxGeometry height="50" width="140" x="870" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="pkg_operations" parent="1" style="shape=rectangle;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;verticalAlign=top;fontSize=14;fontStyle=1" value="Opérations Bancaires" vertex="1">
+          <mxGeometry height="250" width="850" x="200" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="uc13" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Virement interne" vertex="1">
+          <mxGeometry height="50" width="140" x="240" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="uc14" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Virement Interac" vertex="1">
+          <mxGeometry height="50" width="140" x="420" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="uc15" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Effectuer dépôt" vertex="1">
+          <mxGeometry height="50" width="140" x="240" y="570" as="geometry" />
+        </mxCell>
+        <mxCell id="uc16" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Effectuer retrait" vertex="1">
+          <mxGeometry height="50" width="140" x="420" y="570" as="geometry" />
+        </mxCell>
+        <mxCell id="uc17" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Payer facture" vertex="1">
+          <mxGeometry height="50" width="140" x="600" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="uc18" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Gérer&#xa;bénéficiaires" vertex="1">
+          <mxGeometry height="50" width="140" x="780" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="uc19" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Gérer&#xa;fournisseurs" vertex="1">
+          <mxGeometry height="50" width="140" x="780" y="570" as="geometry" />
+        </mxCell>
+        <mxCell id="pkg_profil" parent="1" style="shape=rectangle;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;verticalAlign=top;fontSize=14;fontStyle=1" value="Gestion du Profil" vertex="1">
+          <mxGeometry height="180" width="400" x="200" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="uc20" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Consulter profil" vertex="1">
+          <mxGeometry height="50" width="140" x="240" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="uc21" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Modifier&#xa;informations" vertex="1">
+          <mxGeometry height="50" width="140" x="420" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="uc22" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Changer mot&#xa;de passe" vertex="1">
+          <mxGeometry height="50" width="140" x="330" y="860" as="geometry" />
+        </mxCell>
+        <mxCell id="pkg_admin" parent="1" style="shape=rectangle;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;verticalAlign=top;fontSize=14;fontStyle=1" value="&amp;nbsp;Administration" vertex="1">
+          <mxGeometry height="250" width="400" x="650" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="uc23" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Gérer les clients" vertex="1">
+          <mxGeometry height="50" width="140" x="690" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="uc24" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Consulter&#xa;statistiques" vertex="1">
+          <mxGeometry height="50" width="140" x="870" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="uc25" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Modifier paramètres&#xa;globaux" vertex="1">
+          <mxGeometry height="50" width="140" x="690" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="uc26" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Réinitialiser&#xa;profil client" vertex="1">
+          <mxGeometry height="50" width="140" x="870" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_client_uc01" edge="1" parent="1" source="client" target="uc01">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_client_uc02" edge="1" parent="1" source="client" target="uc02">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_client_uc08" edge="1" parent="1" source="client" target="uc08">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="include_uc01_uc03" edge="1" parent="1" source="uc01" style="endArrow=open;endSize=12;dashed=1;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="uc03" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" width="160" as="geometry" />
+        </mxCell>
+        <mxCell id="include_uc02_uc03" edge="1" parent="1" source="uc02" style="endArrow=open;endSize=12;dashed=1;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;" target="uc03" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" width="160" as="geometry" />
+        </mxCell>
+        <mxCell id="extend_uc02_uc07" edge="1" parent="1" source="uc02" style="endArrow=open;endSize=12;dashed=1;html=1;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="uc07" value="&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;&#xa;[tentatives échouées]">
+          <mxGeometry relative="1" width="160" as="geometry" />
+        </mxCell>
+        <mxCell id="comm_uc03_email" edge="1" parent="1" source="uc03" style="endArrow=none;endSize=12;dashed=1;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" target="email" value="&amp;lt;&amp;lt;communique&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" width="160" as="geometry" />
+        </mxCell>
+        <mxCell id="note_2fa" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#fff2cc;strokeColor=#d6b656;" value="Code 6 chiffres&#xa;Valide 10 minutes&#xa;Envoi par email" vertex="1">
+          <mxGeometry height="80" width="180" x="1150" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_note_2fa" edge="1" parent="1" source="note_2fa" style="dashed=1;endArrow=none;" target="uc03">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
