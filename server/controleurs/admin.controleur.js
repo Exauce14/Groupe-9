@@ -866,39 +866,49 @@ exports.supprimerUtilisateur = async (req, res, next) => {
     if (!userRes.rows[0]) return res.status(404).json({ succes: false, message: 'Utilisateur introuvable.' });
     if (userRes.rows[0].role === 'admin') return res.status(400).json({ succes: false, message: 'Impossible de supprimer un compte admin.' });
 
-    // Suppression en cascade — ordre strict selon les FK
+    // ── Suppression complète en cascade (12 tables) ────────────────────────
     const uid = userId;
-    const accountIds = `(SELECT id FROM accounts WHERE user_id = ${uid})`;
+    const acctSub = `(SELECT id FROM accounts WHERE user_id = ${uid})`;
 
-    // 1. bill_payments → références: users, accounts, transactions, providers
+    // Nullifier les colonnes qui pointent vers cet utilisateur sans CASCADE
+    // (dans d'autres tables que celles de l'utilisateur)
+    await query(`UPDATE transactions SET approved_by = NULL WHERE approved_by = $1`, [uid]);
+    await query(`UPDATE requests      SET reviewed_by = NULL WHERE reviewed_by = $1`, [uid]);
+    await query(`UPDATE users         SET approved_by = NULL WHERE approved_by = $1`, [uid]);
+
+    // 1. bill_payments (→ users, accounts, transactions, providers)
+    //    enterprise_transaction_id sur bill_payments pointe vers transactions
     await query(`DELETE FROM bill_payments WHERE user_id = $1`, [uid]);
-    await query(`DELETE FROM bill_payments WHERE from_account_id IN ${accountIds}`);
+    await query(`DELETE FROM bill_payments WHERE from_account_id IN ${acctSub}`);
 
-    // 2. scheduled_payments → références: users, accounts
-    await query(`DELETE FROM scheduled_payments WHERE user_id = $1`, [uid]);
-    await query(`DELETE FROM scheduled_payments WHERE from_account_id IN ${accountIds}`);
+    // 2. scheduled_payments (→ users, accounts, providers, to_user_id)
+    await query(`DELETE FROM scheduled_payments WHERE user_id = $1 OR to_user_id = $1`, [uid]);
+    await query(`DELETE FROM scheduled_payments WHERE from_account_id IN ${acctSub}`);
 
-    // 3. interac_transfers → références: users, accounts
+    // 3. interac_transfers (→ users, accounts)
     await query(`DELETE FROM interac_transfers WHERE sender_id = $1 OR recipient_id = $1`, [uid]);
-    await query(`DELETE FROM interac_transfers WHERE sender_account_id IN ${accountIds} OR deposit_account_id IN ${accountIds}`);
+    await query(`DELETE FROM interac_transfers WHERE sender_account_id IN ${acctSub} OR deposit_account_id IN ${acctSub}`);
 
-    // 4. Nullifier refs providers → transactions et accounts (on ne supprime pas le fournisseur)
-    await query(`UPDATE providers SET enterprise_transaction_id = NULL WHERE enterprise_transaction_id IN (SELECT id FROM transactions WHERE account_id IN ${accountIds})`);
-    await query(`UPDATE providers SET enterprise_account_id = NULL WHERE enterprise_account_id IN ${accountIds}`);
+    // 4. providers — nullifier enterprise_account_id (pas enterprise_transaction_id, qui est sur bill_payments)
+    await query(`UPDATE providers SET enterprise_account_id = NULL WHERE enterprise_account_id IN ${acctSub}`);
 
-    // 5. beneficiaries, notifications, verification_codes, requests
+    // 5. beneficiaries (→ users, CASCADE mais on reste explicite)
     await query(`DELETE FROM beneficiaries      WHERE user_id = $1`, [uid]);
+
+    // 6. notifications, verification_codes, requests (→ users, CASCADE)
     await query(`DELETE FROM notifications      WHERE user_id = $1`, [uid]);
     await query(`DELETE FROM verification_codes WHERE user_id = $1`, [uid]);
     await query(`DELETE FROM requests           WHERE user_id = $1`, [uid]);
 
-    // 6. transactions et cards (avant accounts)
-    await query(`DELETE FROM transactions WHERE account_id IN ${accountIds}`);
-    await query(`DELETE FROM cards        WHERE account_id IN ${accountIds}`);
+    // 7. transactions et cards (→ accounts, CASCADE — mais on reste explicite)
+    await query(`DELETE FROM transactions WHERE account_id IN ${acctSub}`);
+    await query(`DELETE FROM cards        WHERE account_id IN ${acctSub}`);
 
-    // 7. accounts puis user
+    // 8. accounts (→ users, CASCADE)
     await query(`DELETE FROM accounts WHERE user_id = $1`, [uid]);
-    await query(`DELETE FROM users    WHERE id = $1`,      [uid]);
+
+    // 9. users
+    await query(`DELETE FROM users WHERE id = $1`, [uid]);
 
     res.json({ succes: true, message: `Compte supprimé avec succès.` });
   } catch (error) {
