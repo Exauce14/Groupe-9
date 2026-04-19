@@ -453,19 +453,16 @@ async function chargerUtilisateurs() {
 
 // Demande une raison via un prompt et bloque le compte de l'utilisateur via l'API admin.
 async function bloquerUtilisateur(userId, userName) {
-    const raison = prompt(`Bloquer le compte de ${userName}.\n\nRaison du blocage :`);
+    const raison = await showPrompt('Raison du blocage :', {
+        title: `Bloquer le compte de ${userName}`,
+        confirmText: 'Bloquer',
+        placeholder: 'Ex: Activité suspecte, violation des CGU…'
+    });
 
     if (!raison || raison.trim().length < 2) {
-        showToast('⚠️ Raison requise (minimum 2 caractères)');
+        if (raison !== null) showToast('⚠️ Raison requise (minimum 2 caractères)');
         return;
     }
-
-    const ok = await showConfirm(`Confirmer le blocage du compte de <strong>${userName}</strong> ?`, {
-        title: 'Bloquer le compte',
-        type: 'warning',
-        confirmText: 'Bloquer'
-    });
-    if (!ok) return;
 
     fetch(`${API_URL}/admin/utilisateurs/${userId}/bloquer`, {
         method: 'POST',
