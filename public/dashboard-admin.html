@@ -760,6 +760,71 @@
         </div>
     </div>
 
+    <!-- MODAL RÉVISION DEMANDE -->
+    <div id="reviewDemandeModal" class="modal">
+        <div class="modal-content" style="max-width:600px; width:95%;">
+            <div id="reviewDemandeIcon" class="modal-icon" style="font-size:28px;">📋</div>
+            <h3 id="reviewDemandeTitre" style="margin-bottom:16px;">Révision de la demande</h3>
+
+            <!-- Alerte non-conformité -->
+            <div id="reviewDemandeAlerte" style="display:none; background:#fef3c7; border:1.5px solid #f59e0b; border-radius:10px; padding:14px 16px; margin-bottom:16px; font-size:14px; color:#92400e;">
+                <strong>⚠️ Limite non conforme au statut</strong>
+                <div id="reviewDemandeAlerteMsg" style="margin-top:4px;"></div>
+            </div>
+
+            <!-- Info client -->
+            <div style="background:#f9fafb; border-radius:10px; padding:16px; margin-bottom:16px; font-size:14px;">
+                <div style="font-weight:700; color:#374151; margin-bottom:10px;">👤 Informations du client</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <div><span style="color:#6b7280;">Nom :</span> <strong id="rdNom"></strong></div>
+                    <div><span style="color:#6b7280;">Email :</span> <strong id="rdEmail"></strong></div>
+                    <div><span style="color:#6b7280;">Statut professionnel :</span> <strong id="rdStatut"></strong></div>
+                    <div><span style="color:#6b7280;">Revenu annuel :</span> <strong id="rdRevenu"></strong></div>
+                </div>
+            </div>
+
+            <!-- Info demande -->
+            <div style="background:#f0f4ff; border-radius:10px; padding:16px; margin-bottom:16px; font-size:14px;">
+                <div style="font-weight:700; color:#374151; margin-bottom:10px;">📄 Détails de la demande</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <div><span style="color:#6b7280;">Type :</span> <strong id="rdType"></strong></div>
+                    <div id="rdLimiteDemandeeRow"><span style="color:#6b7280;">Limite demandée :</span> <strong id="rdLimiteDemandee"></strong></div>
+                    <div id="rdLimiteStatutRow"><span style="color:#6b7280;">Limite max (statut) :</span> <strong id="rdLimiteStatut"></strong></div>
+                    <div id="rdMontantRow" style="display:none;"><span style="color:#6b7280;">Montant :</span> <strong id="rdMontant"></strong></div>
+                </div>
+                <div style="margin-top:10px;"><span style="color:#6b7280;">Justification :</span><br><em id="rdJustification" style="color:#374151;"></em></div>
+            </div>
+
+            <!-- Commentaire admin -->
+            <div class="form-group">
+                <label>Commentaire admin (optionnel)</label>
+                <textarea id="reviewDemandeComment" placeholder="Ajoutez un commentaire..." style="width:100%; padding:10px; border:2px solid #e5e7eb; border-radius:8px; font-size:14px; resize:vertical; min-height:70px;"></textarea>
+            </div>
+
+            <div class="modal-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('reviewDemandeModal')" style="flex:1;">Fermer</button>
+                <button type="button" id="reviewBtnRejet" class="btn btn-reject" style="flex:1;" onclick="soumettreRejetDepuisRevue()">Rejeter</button>
+                <button type="button" id="reviewBtnApprouver" class="btn btn-approve" style="flex:1;" onclick="soumettreApprobationDepuisRevue()">Approuver</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL REJETER (depuis revue) -->
+    <div id="rejectReasonModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-icon danger">✕</div>
+            <h3 id="rejectReasonTitre"></h3>
+            <div class="form-group">
+                <label>Raison du rejet *</label>
+                <textarea id="rejectReasonText" required placeholder="Expliquez la raison du rejet..." style="width:100%; padding:10px; border:2px solid #e5e7eb; border-radius:8px; font-size:14px; resize:vertical; min-height:80px;"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('rejectReasonModal')">Annuler</button>
+                <button type="button" class="btn btn-reject" onclick="confirmerRejetDepuisRevue()">Confirmer le rejet</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL APPROUVER DEMANDE -->
     <div id="approveDemandeModal" class="modal">
         <div class="modal-content">

@@ -2,6 +2,9 @@ const { query } = require('../config/baseDeDonnees');
 const notificationModel = require('../modeles/notification.modele');
 const { sendNotificationToAdmin } = require('../utilitaires/websocket');
 
+const LIMITES_CREDIT_STATUT = { student: 1000, employee: 5000, professional: 10000, retired: 3000 };
+const STATUT_LABELS = { student: 'étudiant(e)', employee: 'employé(e)', professional: 'professionnel(le)', retired: 'retraité(e)' };
+
 function getLabelDemande(typeDemande, valeurPropriete) {
   if (typeDemande === 'loan') return valeurPropriete ? 'prêt hypothécaire' : 'prêt personnel';
   const labels = { account_opening: 'ouverture de compte', credit_card: 'carte de crédit', service: 'service' };
@@ -35,9 +38,9 @@ exports.creerDemande = async (req, res, next) => {
     console.log('Type:', typeDemande);
     console.log('User ID:', utilisateurId);
 
-    // Vérifier que l'utilisateur est actif
+    // Vérifier que l'utilisateur est actif et récupérer son statut
     const userCheck = await query(
-      'SELECT account_status FROM users WHERE id = $1',
+      'SELECT account_status, status AS statut_professionnel FROM users WHERE id = $1',
       [utilisateurId]
     );
 
@@ -107,12 +110,20 @@ exports.creerDemande = async (req, res, next) => {
       requestId: demandeId
     });
 
+    // Vérifier conformité limite de crédit
+    const statutProfessionnel = userCheck.rows[0].statut_professionnel;
+    const limiteStatut = LIMITES_CREDIT_STATUT[statutProfessionnel];
+    const isOverLimit = typeDemande === 'credit_card' && limiteDemandee && limiteStatut && parseFloat(limiteDemandee) > limiteStatut;
+
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     res.status(201).json({
       succes: true,
       message: 'Demande soumise avec succès',
-      demandeId: demandeId
+      demandeId,
+      is_over_limit: isOverLimit || false,
+      limite_statut: limiteStatut || null,
+      statut_utilisateur: statutProfessionnel || null
     });
   } catch (error) {
     console.error('Erreur création demande:', error);

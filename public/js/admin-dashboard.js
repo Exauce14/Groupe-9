@@ -229,6 +229,22 @@ document.getElementById('rejectForm').addEventListener('submit', async (e) => {
     }
 });
 
+const LIMITES_CREDIT_STATUT = { student: 1000, employee: 5000, professional: 10000, retired: 3000 };
+const STATUT_LABELS_FR = { student: 'Étudiant(e)', employee: 'Employé(e)', professional: 'Professionnel(le)', retired: 'Retraité(e)' };
+
+let currentReviewDemande = null; // demande en cours de révision
+
+function formatMontantFR(n) {
+    if (!n) return '—';
+    return parseFloat(n).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' });
+}
+
+function estNonConforme(demande) {
+    if (demande.type_demande !== 'credit_card' || !demande.limite_demandee) return false;
+    const limiteStatut = LIMITES_CREDIT_STATUT[demande.statut_utilisateur];
+    return limiteStatut != null && parseFloat(demande.limite_demandee) > limiteStatut;
+}
+
 // Charge et affiche la liste des demandes de services (comptes, cartes, prêts) en attente d'approbation.
 async function chargerDemandes() {
     try {
@@ -275,21 +291,24 @@ async function chargerDemandes() {
                     day: 'numeric'
                 });
 
+                const nonConforme = estNonConforme(demande);
+                const badgeAlerte = nonConforme
+                    ? `<span title="Limite dépasse le seuil du statut ${STATUT_LABELS_FR[demande.statut_utilisateur] || ''}" style="display:inline-block;background:#fef3c7;color:#92400e;border:1px solid #f59e0b;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:700;margin-left:6px;">⚠️ Non conforme</span>`
+                    : '';
+
                 tr.innerHTML = `
                     <td><strong>${demande.prenom} ${demande.nom}</strong><br><small style="color: #6b7280;">${demande.email}</small></td>
-                    <td>${typeLabel}</td>
+                    <td>${typeLabel}${badgeAlerte}</td>
                     <td>${details}</td>
                     <td>${formatMontant(demande.revenu_annuel)}</td>
                     <td>${dateDemande}</td>
                     <td>
-                        <button class="btn btn-approve" onclick="approuverDemande(${demande.id}, '${(demande.prenom + ' ' + demande.nom).replace(/'/g, "\\'")}', '${typeLabel}')">
-                            Approuver
-                        </button>
-                        <button class="btn btn-reject" onclick="rejeterDemande(${demande.id}, '${(demande.prenom + ' ' + demande.nom).replace(/'/g, "\\'")}', '${typeLabel}')">
-                            Rejeter
+                        <button class="btn btn-approve" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;" onclick="ouvrirRevueDemande(${demande.id})">
+                            🔍 Réviser
                         </button>
                     </td>
                 `;
+                tr.dataset.demande = JSON.stringify(demande);
                 tbody.appendChild(tr);
             });
         } else {
@@ -298,6 +317,157 @@ async function chargerDemandes() {
         }
     } catch (error) {
         console.error('Erreur chargement demandes:', error);
+    }
+}
+
+// Ouvre le modal de révision complet pour une demande.
+function ouvrirRevueDemande(demandeId) {
+    // Récupérer la demande depuis le dataset de la ligne du tableau
+    const tr = document.querySelector(`tr[data-demande]`
+        + ` button[onclick="ouvrirRevueDemande(${demandeId})"]`);
+    let demande = null;
+    document.querySelectorAll('tr[data-demande]').forEach(row => {
+        try {
+            const d = JSON.parse(row.dataset.demande);
+            if (d.id === demandeId) demande = d;
+        } catch(e) {}
+    });
+    if (!demande) return;
+
+    currentReviewDemande = demande;
+
+    const typeLabels = { account_opening: 'Ouverture de compte', credit_card: 'Carte de crédit', loan: 'Prêt personnel', mortgage: 'Prêt hypothécaire', investment: 'Compte de placement' };
+    const typeLabel = typeLabels[demande.type_demande] || demande.type_demande;
+    const nonConforme = estNonConforme(demande);
+    const limiteStatut = LIMITES_CREDIT_STATUT[demande.statut_utilisateur];
+
+    // Icône et titre
+    document.getElementById('reviewDemandeIcon').textContent = nonConforme ? '⚠️' : '📋';
+    document.getElementById('reviewDemandeTitre').textContent = `Révision — ${typeLabel} — ${demande.prenom} ${demande.nom}`;
+
+    // Alerte non-conformité
+    const alertBox = document.getElementById('reviewDemandeAlerte');
+    if (nonConforme) {
+        document.getElementById('reviewDemandeAlerteMsg').textContent =
+            `Le statut ${STATUT_LABELS_FR[demande.statut_utilisateur] || demande.statut_utilisateur} autorise une limite maximale de ${formatMontantFR(limiteStatut)}. ` +
+            `La limite demandée est de ${formatMontantFR(demande.limite_demandee)}, ce qui dépasse le seuil de ${formatMontantFR(parseFloat(demande.limite_demandee) - limiteStatut)}.`;
+        alertBox.style.display = 'block';
+    } else {
+        alertBox.style.display = 'none';
+    }
+
+    // Info client
+    document.getElementById('rdNom').textContent = `${demande.prenom} ${demande.nom}`;
+    document.getElementById('rdEmail').textContent = demande.email;
+    document.getElementById('rdStatut').textContent = STATUT_LABELS_FR[demande.statut_utilisateur] || demande.statut_utilisateur || '—';
+    document.getElementById('rdRevenu').textContent = formatMontantFR(demande.revenu_annuel);
+
+    // Info demande
+    document.getElementById('rdType').textContent = typeLabel;
+
+    const limiteDemandeeRow = document.getElementById('rdLimiteDemandeeRow');
+    const limiteStatutRow = document.getElementById('rdLimiteStatutRow');
+    const montantRow = document.getElementById('rdMontantRow');
+
+    if (demande.limite_demandee) {
+        document.getElementById('rdLimiteDemandee').textContent = formatMontantFR(demande.limite_demandee);
+        limiteDemandeeRow.style.display = '';
+        limiteStatutRow.style.display = limiteStatut ? '' : 'none';
+        if (limiteStatut) document.getElementById('rdLimiteStatut').textContent = formatMontantFR(limiteStatut);
+        montantRow.style.display = 'none';
+    } else if (demande.montant_demande) {
+        document.getElementById('rdMontant').textContent = formatMontantFR(demande.montant_demande);
+        montantRow.style.display = '';
+        limiteDemandeeRow.style.display = 'none';
+        limiteStatutRow.style.display = 'none';
+    } else {
+        limiteDemandeeRow.style.display = 'none';
+        limiteStatutRow.style.display = 'none';
+        montantRow.style.display = 'none';
+    }
+
+    document.getElementById('rdJustification').textContent = demande.justification || 'Aucune justification fournie.';
+    document.getElementById('reviewDemandeComment').value = '';
+
+    openModal('reviewDemandeModal');
+}
+
+// Soumet l'approbation depuis le modal de révision.
+async function soumettreApprobationDepuisRevue() {
+    if (!currentReviewDemande) return;
+    const commentaire = document.getElementById('reviewDemandeComment').value.trim();
+
+    const response = await fetch(`${API_URL}/admin/demandes/${currentReviewDemande.id}/approuver`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commentaire, forceApprove: false })
+    });
+    const data = await response.json();
+
+    if (data.succes) {
+        closeModal('reviewDemandeModal');
+        showToast('✅ Demande approuvée avec succès !');
+        chargerStats();
+        chargerDemandes();
+        return;
+    }
+
+    if (data.warning) {
+        // Demande confirmation admin avec "Approuver quand même"
+        const ok = await showConfirm(
+            data.message,
+            { title: `⚠️ Limite non conforme — ${data.prenom} ${data.nom}`, type: 'warning', confirmText: 'Approuver quand même', cancelText: 'Annuler' }
+        );
+        if (!ok) return;
+
+        // Renvoyer avec forceApprove
+        const res2 = await fetch(`${API_URL}/admin/demandes/${currentReviewDemande.id}/approuver`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ commentaire, forceApprove: true })
+        });
+        const data2 = await res2.json();
+        if (data2.succes) {
+            closeModal('reviewDemandeModal');
+            showToast('✅ Demande approuvée (limite non conforme acceptée).');
+            chargerStats();
+            chargerDemandes();
+        } else {
+            showToast('❌ ' + data2.message);
+        }
+        return;
+    }
+
+    showToast('❌ ' + data.message);
+}
+
+// Ouvre le modal de raison de rejet depuis la revue.
+function soumettreRejetDepuisRevue() {
+    if (!currentReviewDemande) return;
+    document.getElementById('rejectReasonTitre').textContent = `Rejeter — ${currentReviewDemande.prenom} ${currentReviewDemande.nom}`;
+    document.getElementById('rejectReasonText').value = '';
+    closeModal('reviewDemandeModal');
+    openModal('rejectReasonModal');
+}
+
+// Confirme le rejet depuis le modal de raison.
+async function confirmerRejetDepuisRevue() {
+    const raison = document.getElementById('rejectReasonText').value.trim();
+    if (!raison) { showToast('⚠️ Veuillez indiquer la raison du rejet'); return; }
+
+    const response = await fetch(`${API_URL}/admin/demandes/${currentReviewDemande.id}/rejeter`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ raison })
+    });
+    const data = await response.json();
+    if (data.succes) {
+        closeModal('rejectReasonModal');
+        showToast('✅ Demande rejetée.');
+        chargerStats();
+        chargerDemandes();
+    } else {
+        showToast('❌ ' + data.message);
     }
 }
 

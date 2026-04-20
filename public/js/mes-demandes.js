@@ -4,6 +4,10 @@ let utilisateurInfo = null;
 let demandesExistantes = [];
 let comptesExistants = [];
 let cartesExistantes = [];
+let profilUtilisateur = null;
+
+const LIMITES_CREDIT_STATUT = { student: 1000, employee: 5000, professional: 10000, retired: 3000 };
+const STATUT_LABELS = { student: 'étudiant(e)', employee: 'employé(e)', professional: 'professionnel(le)', retired: 'retraité(e)' };
 
 // Vérifier l'authentification
 if (!token) {
@@ -23,9 +27,18 @@ async function initialiser() {
     await Promise.all([
         chargerDemandes(),
         chargerComptesExistants(),
-        chargerCartesExistantes()
+        chargerCartesExistantes(),
+        chargerProfil()
     ]);
     verifierDisponibilitesDemandes();
+}
+
+async function chargerProfil() {
+    try {
+        const res = await fetch(`${API_URL}/utilisateurs/mon-profil`, { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+        if (data.succes) profilUtilisateur = data.utilisateur;
+    } catch (e) { /* silencieux */ }
 }
 
 // Charge la liste des comptes bancaires existants de l'utilisateur pour la vérification des disponibilités.
@@ -329,6 +342,20 @@ document.getElementById('formCarteCredit').addEventListener('submit', async func
     if (limiteCredit < 500 || limiteCredit > 50000) {
         afficherAlerte('alertCredit', 'La limite de crédit doit être entre 500$ et 50,000$.', 'error');
         return;
+    }
+
+    // Vérifier conformité avec le statut du client
+    if (profilUtilisateur) {
+        const statut = profilUtilisateur.statut_professionnel;
+        const limiteStatut = LIMITES_CREDIT_STATUT[statut];
+        if (limiteStatut && limiteCredit > limiteStatut) {
+            const fmt = n => n.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' });
+            const ok = await showConfirm(
+                `En tant que ${STATUT_LABELS[statut] || statut}, la limite maximale recommandée est de ${fmt(limiteStatut)}. Votre demande de ${fmt(limiteCredit)} pourrait être rejetée par l'administrateur.`,
+                { title: 'Limite non conforme à votre statut', type: 'warning', confirmText: 'Soumettre quand même', cancelText: 'Modifier ma demande' }
+            );
+            if (!ok) return;
+        }
     }
 
     try {

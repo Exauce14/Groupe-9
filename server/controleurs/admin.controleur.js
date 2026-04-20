@@ -7,6 +7,9 @@ const emailUtils = require('../utilitaires/email.utils');
 const { sendNotificationToUser } = require('../utilitaires/websocket');
 const { query } = require('../config/baseDeDonnees');
 
+const LIMITES_CREDIT_STATUT = { student: 1000, employee: 5000, professional: 10000, retired: 3000 };
+const STATUT_LABELS_FR = { student: 'étudiant(e)', employee: 'employé(e)', professional: 'professionnel(le)', retired: 'retraité(e)' };
+
 // Statistiques du dashboard admin
 exports.statistiques = async (req, res, next) => {
   try {
@@ -257,7 +260,8 @@ exports.demandesEnAttente = async (req, res, next) => {
         u.first_name AS prenom,
         u.last_name AS nom,
         u.email,
-        u.annual_income AS revenu_annuel
+        u.annual_income AS revenu_annuel,
+        u.status AS statut_utilisateur
       FROM requests r
       JOIN users u ON r.user_id = u.id
       WHERE r.status = 'pending'
@@ -280,7 +284,7 @@ exports.demandesEnAttente = async (req, res, next) => {
 exports.approuverDemande = async (req, res, next) => {
   try {
     const { demandeId } = req.params;
-    const { commentaire } = req.body;
+    const { commentaire, forceApprove } = req.body;
     const adminId = req.user.id;
 
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -288,7 +292,7 @@ exports.approuverDemande = async (req, res, next) => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     const demandeResult = await query(
-      `SELECT r.*, u.email, u.first_name AS prenom 
+      `SELECT r.*, u.email, u.first_name AS prenom, u.last_name AS nom, u.status AS statut_professionnel
        FROM requests r
        JOIN users u ON r.user_id = u.id
        WHERE r.id = $1`,
@@ -302,6 +306,23 @@ exports.approuverDemande = async (req, res, next) => {
         succes: false,
         message: 'Demande non trouvée'
       });
+    }
+
+    // Vérification conformité limite crédit (si pas forceApprove)
+    if (demande.request_type === 'credit_card' && !forceApprove) {
+      const statut = demande.statut_professionnel;
+      const limiteStatut = LIMITES_CREDIT_STATUT[statut];
+      if (limiteStatut && parseFloat(demande.requested_limit || 0) > limiteStatut) {
+        return res.json({
+          succes: false,
+          warning: true,
+          message: `Le statut ${STATUT_LABELS_FR[statut] || statut} ne permet pas une limite de crédit de ${parseFloat(demande.requested_limit).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}. La limite recommandée est de ${limiteStatut.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}.`,
+          limite_statut: limiteStatut,
+          statut_utilisateur: statut,
+          prenom: demande.prenom,
+          nom: demande.nom
+        });
+      }
     }
 
     console.log('Type de demande:', demande.request_type);
