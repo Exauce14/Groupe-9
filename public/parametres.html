@@ -377,7 +377,24 @@
             alertMessage.style.display = 'none';
         }
 
-        function deconnexion() {
+        async function deconnexion() {
+            try {
+                const tkn = localStorage.getItem('token');
+                if (tkn) {
+                    const payload = JSON.parse(atob(tkn.split('.')[1]));
+                    if (payload.mustChangePassword) {
+                        const rester = await showConfirm(
+                            'Vous utilisez encore un mot de passe temporaire. Changez-le maintenant avant de vous déconnecter.',
+                            {
+                                title: '⚠️ Mot de passe temporaire non changé',
+                                confirmText: 'Rester et changer',
+                                cancelText: 'Se déconnecter quand même'
+                            }
+                        );
+                        if (rester) return;
+                    }
+                }
+            } catch (e) { /* ignore */ }
             localStorage.removeItem('token');
             localStorage.removeItem('utilisateur');
             window.location.href = 'index.html';

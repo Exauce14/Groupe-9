@@ -869,6 +869,28 @@ function fermerModalHistorique() {
 
 // Déconnecte l'utilisateur en supprimant le token, ferme le WebSocket et redirige vers la connexion.
         async function deconnexion() {
+            // Vérifier si un mot de passe temporaire est actif
+            try {
+                const tkn = localStorage.getItem('token');
+                if (tkn) {
+                    const payload = JSON.parse(atob(tkn.split('.')[1]));
+                    if (payload.mustChangePassword) {
+                        const allerParametres = await showConfirm(
+                            'Vous utilisez encore un mot de passe temporaire. Pour la sécurité de votre compte, veuillez le changer avant de partir.',
+                            {
+                                title: '⚠️ Mot de passe temporaire non changé',
+                                confirmText: 'Changer mon mot de passe',
+                                cancelText: 'Se déconnecter quand même'
+                            }
+                        );
+                        if (allerParametres) {
+                            window.location.href = 'parametres.html';
+                            return;
+                        }
+                    }
+                }
+            } catch (e) { /* ignore */ }
+
             const ok = await showConfirm('', { title: 'Voulez-vous vraiment vous déconnecter ?', confirmText: 'Déconnecter', cancelText: 'Annuler' });
             if (ok) {
                 localStorage.removeItem('token');
