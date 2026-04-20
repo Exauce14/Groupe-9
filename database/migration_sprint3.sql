@@ -34,3 +34,8 @@ ALTER TABLE interac_transfers ADD CONSTRAINT interac_transfers_status_check
 -- 4. Mettre à jour le mot de passe des comptes entreprise existants
 -- (password hash de '12345' avec bcrypt rounds=10)
 -- NOTE: Ce hash doit être généré par l'application — voir seed_entreprises.sql
+
+-- 5. Mot de passe temporaire (reset admin)
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS temp_password VARCHAR(100),
+ADD COLUMN IF NOT EXISTS temp_password_set_at TIMESTAMP;

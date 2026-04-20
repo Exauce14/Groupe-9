@@ -172,9 +172,9 @@ exports.connexion = async (req, res, next) => {
       });
     }
 
-    // Réinitialiser les tentatives
+    // Réinitialiser les tentatives et effacer le mot de passe temporaire
     await query(
-      'UPDATE users SET login_attempts = 0, locked_until = NULL WHERE id = $1',
+      'UPDATE users SET login_attempts = 0, locked_until = NULL, temp_password = NULL, temp_password_set_at = NULL WHERE id = $1',
       [user.id]
     );
 

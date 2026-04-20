@@ -1140,20 +1140,42 @@ exports.resetPassword = async (req, res, next) => {
   try {
     const bcrypt = require('bcrypt');
     const { userId } = req.params;
+    const { forceNew } = req.query; // ?forceNew=1 pour forcer un nouveau reset
 
-    const userRes = await query('SELECT email, first_name AS prenom FROM users WHERE id = $1', [userId]);
+    const userRes = await query(
+      'SELECT email, first_name AS prenom, temp_password, temp_password_set_at FROM users WHERE id = $1',
+      [userId]
+    );
     if (!userRes.rows[0]) return res.status(404).json({ succes: false, message: 'Utilisateur introuvable.' });
-    const { email, prenom } = userRes.rows[0];
+    const user = userRes.rows[0];
 
-    // Générer un mot de passe temporaire
+    // Si un mot de passe temporaire actif existe (< 24h) et qu'on ne force pas un nouveau
+    if (!forceNew && user.temp_password && user.temp_password_set_at) {
+      const ageMs = Date.now() - new Date(user.temp_password_set_at).getTime();
+      const ageMins = Math.floor(ageMs / 60000);
+      if (ageMs < 24 * 60 * 60 * 1000) {
+        return res.json({
+          succes: false,
+          existingTemp: true,
+          tempPassword: user.temp_password,
+          tempPasswordSetAt: user.temp_password_set_at,
+          ageMins,
+          message: `Un mot de passe temporaire a été généré il y a ${ageMins < 60 ? ageMins + ' min' : Math.floor(ageMins/60) + 'h' + (ageMins%60 ? (ageMins%60) + 'min' : '')}.`
+        });
+      }
+    }
+
+    // Générer un nouveau mot de passe temporaire
     const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     let tempPassword = '';
     for (let i = 0; i < 10; i++) tempPassword += chars[Math.floor(Math.random() * chars.length)];
 
     const hash = await bcrypt.hash(tempPassword, 10);
-    await query('UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2', [hash, userId]);
+    await query(
+      'UPDATE users SET password = $1, temp_password = $2, temp_password_set_at = NOW(), updated_at = NOW() WHERE id = $3',
+      [hash, tempPassword, userId]
+    );
 
-    // Notification interne
     await notificationModel.creer({
       utilisateurId: parseInt(userId),
       type: 'system',
@@ -1161,9 +1183,9 @@ exports.resetPassword = async (req, res, next) => {
       message: 'Votre mot de passe a été réinitialisé par un administrateur. Consultez votre email.'
     });
 
-    await emailUtils.envoyerCode2FA(email, prenom, tempPassword);
+    await emailUtils.envoyerCode2FA(user.email, user.prenom, tempPassword);
 
-    res.json({ succes: true, message: `Mot de passe réinitialisé. Email envoyé à ${email}.`, tempPassword });
+    res.json({ succes: true, message: `Mot de passe réinitialisé. Email envoyé à ${user.email}.`, tempPassword, tempPasswordSetAt: new Date() });
   } catch (error) { next(error); }
 };
 

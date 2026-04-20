@@ -1605,23 +1605,44 @@
         navigator.clipboard.writeText(pwd).then(() => showToast('✅ Mot de passe copié !', 'success'));
     }
 
-    async function resetPasswordAdmin(userId, userName) {
-        const ok = await showConfirm(
-            `Un mot de passe temporaire sera généré et envoyé par email à ${userName}.`,
-            { title: 'Réinitialiser le mot de passe ?', type: 'warning', confirmText: 'Réinitialiser' }
-        );
-        if (!ok) return;
+    async function resetPasswordAdmin(userId, userName, forceNew = false) {
+        if (!forceNew) {
+            const ok = await showConfirm(
+                `Un mot de passe temporaire sera généré et envoyé par email à ${userName}.`,
+                { title: 'Réinitialiser le mot de passe ?', type: 'warning', confirmText: 'Réinitialiser' }
+            );
+            if (!ok) return;
+        }
         const token = localStorage.getItem('token');
         try {
-            const res  = await fetch(`/api/admin/utilisateurs/${userId}/reset-password`, {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const url = `/api/admin/utilisateurs/${userId}/reset-password${forceNew ? '?forceNew=1' : ''}`;
+            const res  = await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
             const data = await res.json();
+
+            if (data.existingTemp) {
+                // Mot de passe temporaire déjà actif
+                const setAt = new Date(data.tempPasswordSetAt).toLocaleString('fr-CA', { dateStyle: 'long', timeStyle: 'short' });
+                const choix = await showConfirm(
+                    `${data.message}\nVoulez-vous afficher ce mot de passe ou en générer un nouveau ?`,
+                    { title: `⏱️ Mot de passe temporaire actif — ${userName}`, type: 'warning', confirmText: 'Afficher l\'existant', cancelText: 'Générer un nouveau' }
+                );
+                if (choix) {
+                    // Afficher l'existant
+                    document.getElementById('resetPwdClientName').textContent = userName;
+                    document.getElementById('resetPwdDateHeure').textContent = `Généré le ${setAt}`;
+                    document.getElementById('resetPwdValue').textContent = data.tempPassword;
+                    openModal('resetPasswordModal');
+                } else {
+                    // Forcer un nouveau reset
+                    resetPasswordAdmin(userId, userName, true);
+                }
+                return;
+            }
+
             if (data.succes) {
-                const now = new Date().toLocaleString('fr-CA', { dateStyle: 'long', timeStyle: 'short' });
+                const setAt = new Date(data.tempPasswordSetAt).toLocaleString('fr-CA', { dateStyle: 'long', timeStyle: 'short' });
                 document.getElementById('resetPwdClientName').textContent = userName;
-                document.getElementById('resetPwdDateHeure').textContent = `Généré le ${now}`;
+                document.getElementById('resetPwdDateHeure').textContent = `Généré le ${setAt}`;
                 document.getElementById('resetPwdValue').textContent = data.tempPassword;
                 openModal('resetPasswordModal');
             } else {
