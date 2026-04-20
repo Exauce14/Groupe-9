@@ -112,8 +112,8 @@ exports.approuverInscription = async (req, res, next) => {
     // 4. Créer une transaction initiale pour le dépôt de bienvenue
     console.log('\n💵 CRÉATION TRANSACTION DE BIENVENUE...');
     await query(
-      `INSERT INTO transactions (account_id, transaction_type, amount, balance_after, description)
-       VALUES ($1, 'deposit', 5.00, 5.00, 'Dépôt de bienvenue - Ouverture de compte')`,
+      `INSERT INTO transactions (account_id, transaction_type, amount, balance_after, description, status)
+       VALUES ($1, 'deposit', 5.00, 5.00, 'Dépôt de bienvenue - Ouverture de compte', 'completed')`,
       [compte.id]
     );
     console.log('✅ Transaction de bienvenue créée (5.00$)');

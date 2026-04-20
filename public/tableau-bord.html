@@ -469,9 +469,21 @@
         <div id="pendingBanner" class="pending-banner" style="display: none;">
             <h3>⏳ Compte en attente d'approbation</h3>
             <p>
-                Votre inscription a été soumise avec succès ! Un administrateur examine votre demande. 
+                Votre inscription a été soumise avec succès ! Un administrateur examine votre demande.
                 Vous serez notifié par email dès que votre compte sera approuvé et que vous pourrez accéder à nos services.
             </p>
+        </div>
+
+        <div id="mustChangePwdBanner" style="display:none; background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%); border-left:4px solid #f59e0b; padding:20px 24px; border-radius:12px; margin-bottom:24px; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+            <div>
+                <strong style="color:#92400e; font-size:16px;">🔑 Mot de passe temporaire actif</strong>
+                <p style="color:#78350f; margin:6px 0 0; font-size:14px; line-height:1.5;">
+                    Vous êtes connecté avec un mot de passe temporaire. Pour la sécurité de votre compte, veuillez le changer dès maintenant.
+                </p>
+            </div>
+            <a href="parametres.html" style="background:#f59e0b; color:white; text-decoration:none; padding:10px 20px; border-radius:10px; font-weight:700; font-size:14px; white-space:nowrap;">
+                Changer mon mot de passe
+            </a>
         </div>
 
         <div class="section-card">
@@ -595,6 +607,15 @@
         const utilisateur = profileData.utilisateur;
 
         document.getElementById('welcomeMessage').textContent = `Bienvenue, ${utilisateur.prenom} !`;
+
+        // Afficher la bannière mot de passe temporaire si applicable
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.mustChangePassword) {
+                const banner = document.getElementById('mustChangePwdBanner');
+                banner.style.display = 'flex';
+            }
+        } catch (e) { /* token invalide */ }
 
         // Utiliser le statut du serveur (et non du token)
         if (utilisateur.statut_compte === 'pending') {

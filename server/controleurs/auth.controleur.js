@@ -172,9 +172,9 @@ exports.connexion = async (req, res, next) => {
       });
     }
 
-    // Réinitialiser les tentatives et effacer le mot de passe temporaire
+    // Réinitialiser les tentatives (temp_password effacé seulement au changement de mot de passe)
     await query(
-      'UPDATE users SET login_attempts = 0, locked_until = NULL, temp_password = NULL, temp_password_set_at = NULL WHERE id = $1',
+      'UPDATE users SET login_attempts = 0, locked_until = NULL WHERE id = $1',
       [user.id]
     );
 
@@ -232,7 +232,7 @@ exports.verifier2FA = async (req, res, next) => {
     await verificationModel.marquerUtilise(codeValide.id);
 
     const utilisateur = await query(
-      `SELECT id, email, first_name AS prenom, last_name AS nom, role, account_status AS statut_compte
+      `SELECT id, email, first_name AS prenom, last_name AS nom, role, account_status AS statut_compte, temp_password
        FROM users WHERE id = $1`,
       [userId]
     );
@@ -240,13 +240,14 @@ exports.verifier2FA = async (req, res, next) => {
     const user = utilisateur.rows[0];
 
     const token = jwt.sign(
-      { 
-        id: user.id, 
-        email: user.email, 
+      {
+        id: user.id,
+        email: user.email,
         prenom: user.prenom,
         nom: user.nom,
         role: user.role,
-        accountStatus: user.statut_compte
+        accountStatus: user.statut_compte,
+        mustChangePassword: !!user.temp_password
       },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
@@ -405,7 +406,7 @@ exports.reinitialiserMotDePasse = async (req, res, next) => {
 
 exports.changerMotDePasse = async (req, res, next) => {
   try {
-    const { actuelMotDePasse, nouveauMotDePasse, confirmerNouveauMotDePasse } = req.body;
+    const { actuelMotDePasse, nouveauMotDePasse, confirmerNouveauMotDePasse, methodVerif } = req.body;
 
     if (!actuelMotDePasse || !nouveauMotDePasse || !confirmerNouveauMotDePasse) {
       return res.status(400).json({
@@ -421,29 +422,42 @@ exports.changerMotDePasse = async (req, res, next) => {
       });
     }
 
-    const utilisateur = await utilisateurModel.trouverParId(req.user.id);
+    const result = await query(
+      'SELECT id, email, first_name, password, temp_password FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    const utilisateur = result.rows[0];
     if (!utilisateur) {
-      return res.status(404).json({
-        succes: false,
-        message: 'Utilisateur non trouvé.'
-      });
+      return res.status(404).json({ succes: false, message: 'Utilisateur non trouvé.' });
     }
 
-    const motDePasseValide = await bcrypt.compare(actuelMotDePasse, utilisateur.password);
-    if (!motDePasseValide) {
-      return res.status(401).json({
-        succes: false,
-        message: 'Mot de passe actuel incorrect.'
-      });
+    if (methodVerif === 'temp') {
+      if (!utilisateur.temp_password || actuelMotDePasse !== utilisateur.temp_password) {
+        return res.status(401).json({
+          succes: false,
+          message: 'Mot de passe temporaire incorrect.'
+        });
+      }
+    } else {
+      const motDePasseValide = await bcrypt.compare(actuelMotDePasse, utilisateur.password);
+      if (!motDePasseValide) {
+        return res.status(401).json({
+          succes: false,
+          message: 'Mot de passe actuel incorrect.'
+        });
+      }
     }
 
     const motDePasseHash = await bcrypt.hash(nouveauMotDePasse, 10);
-    await utilisateurModel.mettreAJourMotDePasseParId(utilisateur.id, motDePasseHash);
+    await query(
+      'UPDATE users SET password = $1, temp_password = NULL, temp_password_set_at = NULL, updated_at = NOW() WHERE id = $2',
+      [motDePasseHash, utilisateur.id]
+    );
     await emailUtils.envoyerEmailConfirmationChangementMotDePasse(utilisateur.email, utilisateur.first_name);
 
     res.json({
       succes: true,
-      message: 'Mot de passe mis a jour avec succes.'
+      message: 'Mot de passe mis à jour avec succès.'
     });
   } catch (error) {
     console.error('Erreur changement mot de passe:', error);

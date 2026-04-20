@@ -247,13 +247,28 @@
 
             <!-- SECTION : Mot de passe -->
             <p class="section-title">Changer le mot de passe</p>
-            <p class="subtitle">Vous devez saisir votre mot de passe actuel pour confirmer la modification.</p>
+            <p class="subtitle" id="pwdSubtitle">Vous devez saisir votre mot de passe actuel pour confirmer la modification.</p>
 
             <div id="alertMessage" class="message"></div>
 
             <form id="changePasswordForm">
+                <!-- Choix de méthode de vérification (visible seulement si mot de passe temporaire actif) -->
+                <div id="methodVerifGroup" class="form-group" style="display:none;">
+                    <label style="margin-bottom:12px; display:block;">Vérifier mon identité avec :</label>
+                    <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:500; color:#374151;">
+                            <input type="radio" name="methodVerif" value="temp" id="radioTemp" style="width:auto; accent-color:#667eea;">
+                            Mot de passe temporaire
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:500; color:#374151;">
+                            <input type="radio" name="methodVerif" value="current" id="radioCurrent" style="width:auto; accent-color:#667eea;" checked>
+                            Mot de passe actuel
+                        </label>
+                    </div>
+                </div>
+
                 <div class="form-group">
-                    <label for="currentPassword">Mot de passe actuel</label>
+                    <label for="currentPassword" id="currentPasswordLabel">Mot de passe actuel</label>
                     <input type="password" id="currentPassword" required placeholder="••••••••••••">
                 </div>
                 <div class="form-group">
@@ -275,6 +290,27 @@
         const alertProfil = document.getElementById('alertProfil');
         const changePasswordForm = document.getElementById('changePasswordForm');
         const profilForm = document.getElementById('profilForm');
+
+        // Vérifier si l'utilisateur a un mot de passe temporaire actif
+        function verifierMustChangePassword() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                if (payload.mustChangePassword) {
+                    document.getElementById('methodVerifGroup').style.display = 'block';
+                    document.getElementById('pwdSubtitle').textContent = 'Un mot de passe temporaire est actif sur votre compte. Vous pouvez l\'utiliser ou votre mot de passe actuel pour confirmer la modification.';
+                    // Écouter le changement de radio pour mettre à jour le label
+                    document.querySelectorAll('input[name="methodVerif"]').forEach(r => {
+                        r.addEventListener('change', () => {
+                            const label = document.getElementById('currentPasswordLabel');
+                            label.textContent = r.value === 'temp' ? 'Mot de passe temporaire' : 'Mot de passe actuel';
+                        });
+                    });
+                }
+            } catch (e) { /* token invalide */ }
+        }
+        verifierMustChangePassword();
 
         function showMessageProfil(text, type = 'success') {
             alertProfil.textContent = text;
@@ -360,6 +396,9 @@
                 return;
             }
 
+            const methodRadio = document.querySelector('input[name="methodVerif"]:checked');
+            const methodVerif = methodRadio ? methodRadio.value : 'current';
+
             try {
                 const token = localStorage.getItem('token');
                 const response = await fetch(`${API_URL}/utilisateurs/changer-mot-de-passe`, {
@@ -371,7 +410,8 @@
                     body: JSON.stringify({
                         actuelMotDePasse: currentPassword,
                         nouveauMotDePasse: newPassword,
-                        confirmerNouveauMotDePasse: confirmPassword
+                        confirmerNouveauMotDePasse: confirmPassword,
+                        methodVerif
                     })
                 });
 
@@ -380,6 +420,8 @@
                 if (data.succes) {
                     showMessage(data.message, 'success');
                     changePasswordForm.reset();
+                    // Cacher l'option temporaire maintenant que le mot de passe est changé
+                    document.getElementById('methodVerifGroup').style.display = 'none';
                 } else {
                     showMessage(data.message || 'Impossible de mettre à jour le mot de passe.', 'error');
                 }
