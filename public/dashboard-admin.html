@@ -760,6 +760,34 @@
         </div>
     </div>
 
+    <!-- MODAL MOT DE PASSE TEMPORAIRE -->
+    <div id="resetPasswordModal" class="modal">
+        <div class="modal-content" style="max-width:460px; text-align:center;">
+            <div style="font-size:48px; margin-bottom:12px;">🔑</div>
+            <h3 style="margin-bottom:4px;">Mot de passe temporaire</h3>
+            <p id="resetPwdClientName" style="color:#6b7280; font-size:14px; margin-bottom:4px;"></p>
+            <p id="resetPwdDateHeure" style="color:#9ca3af; font-size:12px; margin-bottom:24px;"></p>
+
+            <div style="background:#f0f4ff; border:2px solid #667eea; border-radius:12px; padding:20px; margin-bottom:20px; position:relative;">
+                <div style="font-size:11px; color:#6b7280; font-weight:600; letter-spacing:1px; margin-bottom:8px;">MOT DE PASSE TEMPORAIRE</div>
+                <div id="resetPwdValue" style="font-size:28px; font-weight:700; font-family:monospace; color:#1f2937; letter-spacing:4px; user-select:all;"></div>
+            </div>
+
+            <div style="background:#fef3c7; border-radius:8px; padding:10px 14px; font-size:12px; color:#92400e; margin-bottom:20px; text-align:left;">
+                ⚠️ Ce mot de passe est affiché une seule fois. Transmettez-le au client de façon sécurisée. Un email lui a aussi été envoyé.
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="copierMotDePasse()" style="flex:1; padding:12px; background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:10px; font-weight:600; cursor:pointer; font-size:15px;">
+                    📋 Copier
+                </button>
+                <button onclick="closeModal('resetPasswordModal')" style="flex:1; padding:12px; background:#f3f4f6; color:#374151; border:2px solid #e5e7eb; border-radius:10px; font-weight:600; cursor:pointer; font-size:15px;">
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL RÉVISION DEMANDE -->
     <div id="reviewDemandeModal" class="modal">
         <div class="modal-content" style="max-width:600px; width:95%;">
@@ -1572,10 +1600,15 @@
         } catch (e) { showToast('Erreur sauvegarde', 'error'); }
     }
 
+    function copierMotDePasse() {
+        const pwd = document.getElementById('resetPwdValue').textContent;
+        navigator.clipboard.writeText(pwd).then(() => showToast('✅ Mot de passe copié !', 'success'));
+    }
+
     async function resetPasswordAdmin(userId, userName) {
         const ok = await showConfirm(
-            `Réinitialiser le mot de passe de <strong>${userName}</strong> ?<br>Un mot de passe temporaire sera généré et envoyé par email.`,
-            { title: 'Reset mot de passe', type: 'warning', confirmText: 'Réinitialiser' }
+            `Un mot de passe temporaire sera généré et envoyé par email à ${userName}.`,
+            { title: 'Réinitialiser le mot de passe ?', type: 'warning', confirmText: 'Réinitialiser' }
         );
         if (!ok) return;
         const token = localStorage.getItem('token');
@@ -1586,7 +1619,11 @@
             });
             const data = await res.json();
             if (data.succes) {
-                showToast(`✅ Mot de passe réinitialisé. Temporaire : ${data.tempPassword}`, 'success');
+                const now = new Date().toLocaleString('fr-CA', { dateStyle: 'long', timeStyle: 'short' });
+                document.getElementById('resetPwdClientName').textContent = userName;
+                document.getElementById('resetPwdDateHeure').textContent = `Généré le ${now}`;
+                document.getElementById('resetPwdValue').textContent = data.tempPassword;
+                openModal('resetPasswordModal');
             } else {
                 showToast('❌ ' + data.message, 'error');
             }
