@@ -1127,6 +1127,7 @@ exports.modifierUtilisateur = async (req, res, next) => {
     await notificationModel.creer({
       utilisateurId: parseInt(userId),
       type: 'profile_update',
+      titre: 'Informations mises à jour',
       message: 'Vos informations personnelles ont été mises à jour par un administrateur.'
     });
 
@@ -1156,6 +1157,7 @@ exports.resetPassword = async (req, res, next) => {
     await notificationModel.creer({
       utilisateurId: parseInt(userId),
       type: 'security_alert',
+      titre: 'Mot de passe réinitialisé',
       message: 'Votre mot de passe a été réinitialisé par un administrateur. Consultez votre email.'
     });
 
