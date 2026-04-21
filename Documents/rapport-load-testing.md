@@ -2,7 +2,7 @@
 
 **Date :** 21 avril 2026  
 **Application :** Fortivia Bank (`https://groupe-9.onrender.com`)  
-**Réalisé par :** Claude Sonnet 4.6 (Anthropic) via Claude Code
+
 
 ---
 
@@ -191,5 +191,3 @@ Le load testing réalisé avec **Autocannon v8.0.0** démontre que Fortivia Bank
 Ces résultats sont **normaux et attendus** pour un projet académique hébergé gratuitement. En environnement de production réel, une infrastructure payante avec plusieurs instances, un cache Redis et un CDN permettrait de supporter facilement **10 000+ utilisateurs simultanés** avec la même architecture Node.js/PostgreSQL.
 
 ---
-
-*Rapport généré à partir de tests réels effectués le 21 avril 2026 sur `https://groupe-9.onrender.com`*
